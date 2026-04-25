@@ -56,31 +56,98 @@ struct CalibrationData: Codable, Sendable {
     let calibratedAt: Date
     let sampleCount: Int
 
-    // Gaussian fit — Crest Factor
+    // Gaussian fit — kept for legacy fallback and quality grading
     let meanCrestFactor: Double
     let stdCrestFactor: Double
-    // Gaussian fit — Rise Time
     let meanRiseTime: Double
     let stdRiseTime: Double
-    // Gaussian fit — Z-axis dominance ratio
     let meanAxisZ: Double
     let stdAxisZ: Double
-    // Timing model — learned from multi-tap calibration phases (nil if not yet calibrated)
+
+    // Full 17-feature model (TapFeatureVector.toArray())
+    var featureMean: [Double]           // empty when model was fit without feature vectors
+    var featureStd:  [Double]
+    var calibrationFloorScore: Double   // lowest matchScore among calibration samples
+
     var learnedDoubleTapWindowMs: Double?
     var learnedTripleTapWindowMs: Double?
 
-    // MARK: Derived
+    // MARK: - Backward-compatible decoder
 
-    /// Match score in **[0, 1]** based on morphological shape (crest factor & rise time).
-    ///
-    /// A score of 1.0 means the event is exactly at the calibrated mean;
-    /// a score of 0.0 means it is ≥ 3 σ away.
+    enum CodingKeys: String, CodingKey {
+        case calibratedAt, sampleCount
+        case meanCrestFactor, stdCrestFactor
+        case meanRiseTime, stdRiseTime
+        case meanAxisZ, stdAxisZ
+        case featureMean, featureStd, calibrationFloorScore
+        case learnedDoubleTapWindowMs, learnedTripleTapWindowMs
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        calibratedAt       = try c.decode(Date.self,   forKey: .calibratedAt)
+        sampleCount        = try c.decode(Int.self,    forKey: .sampleCount)
+        meanCrestFactor    = try c.decode(Double.self, forKey: .meanCrestFactor)
+        stdCrestFactor     = try c.decode(Double.self, forKey: .stdCrestFactor)
+        meanRiseTime       = try c.decode(Double.self, forKey: .meanRiseTime)
+        stdRiseTime        = try c.decode(Double.self, forKey: .stdRiseTime)
+        meanAxisZ          = try c.decode(Double.self, forKey: .meanAxisZ)
+        stdAxisZ           = try c.decode(Double.self, forKey: .stdAxisZ)
+        learnedDoubleTapWindowMs = try c.decodeIfPresent(Double.self, forKey: .learnedDoubleTapWindowMs)
+        learnedTripleTapWindowMs = try c.decodeIfPresent(Double.self, forKey: .learnedTripleTapWindowMs)
+        featureMean            = (try? c.decode([Double].self, forKey: .featureMean))  ?? []
+        featureStd             = (try? c.decode([Double].self, forKey: .featureStd))   ?? []
+        calibrationFloorScore  = (try? c.decode(Double.self,  forKey: .calibrationFloorScore)) ?? 0.0
+    }
+
+    // Memberwise init used by fit/updating/bootstrap
+    init(calibratedAt: Date, sampleCount: Int,
+         meanCrestFactor: Double, stdCrestFactor: Double,
+         meanRiseTime: Double, stdRiseTime: Double,
+         meanAxisZ: Double, stdAxisZ: Double,
+         featureMean: [Double], featureStd: [Double],
+         calibrationFloorScore: Double,
+         learnedDoubleTapWindowMs: Double?, learnedTripleTapWindowMs: Double?) {
+        self.calibratedAt              = calibratedAt
+        self.sampleCount               = sampleCount
+        self.meanCrestFactor           = meanCrestFactor
+        self.stdCrestFactor            = stdCrestFactor
+        self.meanRiseTime              = meanRiseTime
+        self.stdRiseTime               = stdRiseTime
+        self.meanAxisZ                 = meanAxisZ
+        self.stdAxisZ                  = stdAxisZ
+        self.featureMean               = featureMean
+        self.featureStd                = featureStd
+        self.calibrationFloorScore     = calibrationFloorScore
+        self.learnedDoubleTapWindowMs  = learnedDoubleTapWindowMs
+        self.learnedTripleTapWindowMs  = learnedTripleTapWindowMs
+    }
+
+    // MARK: - Scoring
+
     func matchScore(for event: TapEvent) -> Double {
+        if let fv = event.features?.toArray(),
+           fv.count == featureMean.count, !featureMean.isEmpty {
+            return fullFeatureScore(fv)
+        }
+        return legacyMatchScore(for: event)
+    }
+
+    private func fullFeatureScore(_ fv: [Double]) -> Double {
+        var zSum = 0.0; var count = 0
+        for i in 0..<fv.count {
+            guard featureStd[i] > 1e-6 else { continue }
+            zSum += abs((fv[i] - featureMean[i]) / featureStd[i])
+            count += 1
+        }
+        guard count > 0 else { return 0.5 }  // all stds collapsed — neutral score
+        return max(0, 1.0 - (zSum / Double(count)) / 3.0)
+    }
+
+    private func legacyMatchScore(for event: TapEvent) -> Double {
         let zCrest = stdCrestFactor > 1e-6 ? (event.crestFactor - meanCrestFactor) / stdCrestFactor : 0
-        let zRise = stdRiseTime > 1e-6 ? (event.riseTimeMs - meanRiseTime) / stdRiseTime : 0
-        
-        let zScore = (abs(zCrest) + abs(zRise)) / 2.0
-        return max(0, 1.0 - zScore / 3.0)
+        let zRise  = stdRiseTime  > 1e-6 ? (event.riseTimeMs  - meanRiseTime)  / stdRiseTime  : 0
+        return max(0, 1.0 - (abs(zCrest) + abs(zRise)) / 2.0 / 3.0)
     }
 
     /// Letter grade reflecting tap shape consistency.
@@ -94,79 +161,96 @@ struct CalibrationData: Codable, Sendable {
         }
     }
 
-    // MARK: Factory
+    // MARK: - Factory
 
-    /// Fit a `CalibrationData` model from a non-empty array of tap events.
     static func fit(
         samples: [TapEvent],
         learnedDoubleTapWindowMs: Double? = nil,
         learnedTripleTapWindowMs: Double? = nil
     ) -> CalibrationData {
-        precondition(!samples.isEmpty, "Cannot fit model from empty sample set")
+        precondition(!samples.isEmpty)
         let crests = samples.map(\.crestFactor)
         let rises  = samples.map(\.riseTimeMs)
         let axisZs = samples.map(\.axisRatioZ)
-        return CalibrationData(
-            calibratedAt:             Date(),
-            sampleCount:              samples.count,
-            meanCrestFactor:          crests.statisticalMean,
-            stdCrestFactor:           crests.standardDeviation,
-            meanRiseTime:             rises.statisticalMean,
-            stdRiseTime:              rises.standardDeviation,
-            meanAxisZ:                axisZs.statisticalMean,
-            stdAxisZ:                 axisZs.standardDeviation,
+
+        // Build 17-feature arrays from samples that have a TapFeatureVector
+        let fvArrays = samples.compactMap { $0.features?.toArray() }
+        let dim = fvArrays.first?.count ?? 0
+        var fMean = [Double](repeating: 0, count: dim)
+        var fStd  = [Double](repeating: 0, count: dim)
+        if !fvArrays.isEmpty {
+            let n = Double(fvArrays.count)
+            for i in 0..<dim {
+                fMean[i] = fvArrays.map { $0[i] }.reduce(0, +) / n
+                let variance = fvArrays.map { pow($0[i] - fMean[i], 2) }.reduce(0, +) / n
+                fStd[i] = sqrt(variance)
+            }
+        }
+
+        var data = CalibrationData(
+            calibratedAt: Date(), sampleCount: samples.count,
+            meanCrestFactor: crests.statisticalMean, stdCrestFactor: crests.standardDeviation,
+            meanRiseTime: rises.statisticalMean,     stdRiseTime: rises.standardDeviation,
+            meanAxisZ: axisZs.statisticalMean,       stdAxisZ: axisZs.standardDeviation,
+            featureMean: fMean, featureStd: fStd,
+            calibrationFloorScore: 0,
             learnedDoubleTapWindowMs: learnedDoubleTapWindowMs,
             learnedTripleTapWindowMs: learnedTripleTapWindowMs
         )
+        data.calibrationFloorScore = samples.map { data.matchScore(for: $0) }.min() ?? 1.0
+        return data
     }
 
-    /// Bootstrap an initial model from a single event using a wide prior.
     static func bootstrap(from event: TapEvent) -> CalibrationData {
-        CalibrationData(
-            calibratedAt:             Date(),
-            sampleCount:              1,
-            meanCrestFactor:          event.crestFactor,
-            stdCrestFactor:           0.5,    // wide prior
-            meanRiseTime:             event.riseTimeMs,
-            stdRiseTime:              10.0,   // wide prior
-            meanAxisZ:                event.axisRatioZ,
-            stdAxisZ:                 0.20,
-            learnedDoubleTapWindowMs: nil,
-            learnedTripleTapWindowMs: nil
+        let fv    = event.features?.toArray() ?? []
+        let prior = fv.map { _ in 1.0 }
+        return CalibrationData(
+            calibratedAt: Date(), sampleCount: 1,
+            meanCrestFactor: event.crestFactor, stdCrestFactor: 0.5,
+            meanRiseTime: event.riseTimeMs,     stdRiseTime: 10.0,
+            meanAxisZ: event.axisRatioZ,        stdAxisZ: 0.20,
+            featureMean: fv, featureStd: prior,
+            calibrationFloorScore: 0.0,
+            learnedDoubleTapWindowMs: nil, learnedTripleTapWindowMs: nil
         )
     }
 
-    /// Returns a new model updated via Exponential Moving Average (α = 0.05).
     func updating(with event: TapEvent) -> CalibrationData {
         let α: Double = 0.05
-        
-        // Update Crest Factor
+
         let c = event.crestFactor
-        let oldMeanCrest = meanCrestFactor
-        let newMeanCrest = meanCrestFactor + α * (c - meanCrestFactor)
-        let newVarCrest  = (1 - α) * (stdCrestFactor * stdCrestFactor + α * pow(c - oldMeanCrest, 2))
+        let oldMC = meanCrestFactor
+        let newMC = oldMC + α * (c - oldMC)
+        let newVC = (1 - α) * (stdCrestFactor * stdCrestFactor + α * pow(c - oldMC, 2))
 
-        // Update Rise Time
         let r = event.riseTimeMs
-        let oldMeanRise = meanRiseTime
-        let newMeanRise = meanRiseTime + α * (r - meanRiseTime)
-        let newVarRise  = (1 - α) * (stdRiseTime * stdRiseTime + α * pow(r - oldMeanRise, 2))
+        let oldMR = meanRiseTime
+        let newMR = oldMR + α * (r - oldMR)
+        let newVR = (1 - α) * (stdRiseTime * stdRiseTime + α * pow(r - oldMR, 2))
 
-        // Update Axis Z
-        let axisZ = event.axisRatioZ
-        let oldMeanZ = meanAxisZ
-        let newMeanZ = meanAxisZ + α * (axisZ - meanAxisZ)
-        let newVarZ  = (1 - α) * (stdAxisZ * stdAxisZ + α * pow(axisZ - oldMeanZ, 2))
+        let z = event.axisRatioZ
+        let oldMZ = meanAxisZ
+        let newMZ = oldMZ + α * (z - oldMZ)
+        let newVZ = (1 - α) * (stdAxisZ * stdAxisZ + α * pow(z - oldMZ, 2))
+
+        var newFMean = featureMean
+        var newFStd  = featureStd
+        if let fv = event.features?.toArray(), fv.count == featureMean.count, !featureMean.isEmpty {
+            for i in 0..<fv.count {
+                let old   = newFMean[i]
+                newFMean[i] = old + α * (fv[i] - old)
+                let oldV    = newFStd[i] * newFStd[i]
+                newFStd[i]  = sqrt(max(1e-6, (1 - α) * (oldV + α * pow(fv[i] - old, 2))))
+            }
+        }
 
         return CalibrationData(
-            calibratedAt:             calibratedAt,
-            sampleCount:              sampleCount + 1,
-            meanCrestFactor:          newMeanCrest,
-            stdCrestFactor:           sqrt(max(1e-6, newVarCrest)),
-            meanRiseTime:             newMeanRise,
-            stdRiseTime:              sqrt(max(1e-6, newVarRise)),
-            meanAxisZ:                newMeanZ,
-            stdAxisZ:                 sqrt(max(1e-6, newVarZ)),
+            calibratedAt: calibratedAt, sampleCount: sampleCount + 1,
+            meanCrestFactor: newMC, stdCrestFactor: sqrt(max(1e-6, newVC)),
+            meanRiseTime: newMR,    stdRiseTime:    sqrt(max(1e-6, newVR)),
+            meanAxisZ: newMZ,       stdAxisZ:       sqrt(max(1e-6, newVZ)),
+            featureMean: newFMean,  featureStd: newFStd,
+            calibrationFloorScore: calibrationFloorScore,
             learnedDoubleTapWindowMs: learnedDoubleTapWindowMs,
             learnedTripleTapWindowMs: learnedTripleTapWindowMs
         )

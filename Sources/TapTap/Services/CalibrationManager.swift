@@ -316,6 +316,9 @@ final class CalibrationManager {
             stdRiseTime:              existing.stdRiseTime,
             meanAxisZ:                existing.meanAxisZ,
             stdAxisZ:                 existing.stdAxisZ,
+            featureMean:              existing.featureMean,
+            featureStd:               existing.featureStd,
+            calibrationFloorScore:    existing.calibrationFloorScore,
             learnedDoubleTapWindowMs: learnedDouble,
             learnedTripleTapWindowMs: learnedTriple
         )
