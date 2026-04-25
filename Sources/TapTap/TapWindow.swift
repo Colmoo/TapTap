@@ -146,7 +146,7 @@ struct TapWindow: Sendable {
 
 // MARK: - TapFeatureVector
 
-/// 16-scalar feature vector assembled from a TapWindow (Steps 5–9).
+/// 17-scalar feature vector assembled from a TapWindow (Steps 5–9).
 struct TapFeatureVector: Codable, Sendable {
     var riseTime: Double        // ms — time from 10% to peak of daz
     var fwhm: Double            // ms — full-width-at-half-maximum of daz peak
