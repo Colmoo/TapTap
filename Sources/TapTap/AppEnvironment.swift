@@ -22,6 +22,9 @@ final class AppEnvironment {
     /// settling vibrations cannot corrupt the calibration model.
     private var lastMovementTime: Date = .distantPast
 
+    /// Passive noise model — populated from strongly-rejected IMU events.
+    private(set) var noiseModel: NoiseModel = .empty
+
     private(set) var isListening: Bool = false
     private(set) var lastGesture: GestureType? = nil
     /// Increments with every gesture detection. Use this in onChange to guarantee
@@ -41,6 +44,7 @@ final class AppEnvironment {
     init() {
         applySettings()
         wireUpPipeline()
+        loadNoiseModel()
         startListening()
     }
 
@@ -71,6 +75,24 @@ final class AppEnvironment {
 
     func toggleListening() {
         isListening ? stopListening() : startListening()
+    }
+
+    // MARK: - Noise model persistence
+
+    private func loadNoiseModel() {
+        guard let raw  = UserDefaults.standard.data(forKey: NoiseModel.persistenceKey),
+              let model = try? JSONDecoder().decode(NoiseModel.self, from: raw) else { return }
+        noiseModel = model
+    }
+
+    private func persistNoiseModel() {
+        guard let data = try? JSONEncoder().encode(noiseModel) else { return }
+        UserDefaults.standard.set(data, forKey: NoiseModel.persistenceKey)
+    }
+
+    func resetNoiseModel() {
+        noiseModel = .empty
+        UserDefaults.standard.removeObject(forKey: NoiseModel.persistenceKey)
     }
 
     /// Inject a synthetic tap — useful for testing without real hardware.
@@ -117,6 +139,15 @@ final class AppEnvironment {
         } catch {
             logger.log("Failed to configure Launch at Login: \(error.localizedDescription)", kind: .error)
         }
+    }
+
+    /// Returns the ML gate threshold to compare final scores against.
+    /// Uses calibration floor × 0.85 + sensitivity bias unless the user manually overrode it.
+    private func effectiveMLThreshold(for data: CalibrationData) -> Double {
+        let s = store.settings
+        if s.userOverrodeMLThreshold { return s.mlScoreThreshold }
+        let auto = data.calibrationFloorScore * 0.85
+        return min(0.99, max(0.01, auto + s.sensitivityBias * 0.15))
     }
 
     // MARK: - Pipeline
@@ -168,17 +199,38 @@ final class AppEnvironment {
                 return
             }
 
-            // ML gate: active when enabled, model is ready (≥5 samples), and data exists.
-            // Rejected events must not reach recordAcceptedTap — only clean taps train the model.
+            // ML gate
             if self.store.settings.mlEnabled,
                self.calibration.isMLReady,
                let data = self.calibration.calibrationData {
-                let score = data.matchScore(for: event)
-                self.lastTapScore = score
-                guard score >= self.store.settings.mlScoreThreshold else {
+
+                let tapScore = data.matchScore(for: event)
+
+                // Apply likelihood ratio when noise model is active
+                let finalScore: Double
+                let s = self.store.settings
+                if s.noiseModelEnabled, self.noiseModel.isActive,
+                   let fv = event.features?.toArray() {
+                    let noiseScore = self.noiseModel.score(for: fv)
+                    finalScore = self.noiseModel.finalScore(tapScore: tapScore, noiseScore: noiseScore)
+                } else {
+                    finalScore = tapScore
+                }
+                self.lastTapScore = finalScore
+
+                let threshold = self.effectiveMLThreshold(for: data)
+                guard finalScore >= threshold else {
+                    // Feed noise model: only strongly-rejected events (raw tapScore < 0.10)
+                    if self.store.settings.noiseModelEnabled,
+                       tapScore < 0.10,
+                       let fv = event.features?.toArray() {
+                        self.noiseModel.update(features: fv)
+                        self.persistNoiseModel()
+                    }
                     if self.store.settings.debugLoggingEnabled {
                         self.logger.log(
-                            String(format: "ML filtered tap %.2fg (score %.2f)", event.peakMagnitude, score),
+                            String(format: "ML filtered tap %.2fg (tap %.2f, final %.2f, threshold %.2f)",
+                                   event.peakMagnitude, tapScore, finalScore, threshold),
                             kind: .system
                         )
                     }
