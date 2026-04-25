@@ -7,6 +7,14 @@ struct DetectionView: View {
     /// 0–1 level shown by the acoustic activity bar; decays with animation.
     @State private var acousticPulse: Double = 0
 
+    private var noiseModelStatus: String {
+        let m = env.noiseModel
+        guard env.store.settings.noiseModelEnabled else { return "Paused" }
+        if m.sampleCount == 0 { return "Waiting for noise events…" }
+        if m.isActive { return "Active (\(m.sampleCount) samples)" }
+        return "Learning (\(m.sampleCount) / \(NoiseModel.activationThreshold))"
+    }
+
     var body: some View {
         Form {
             Section("Detection") {
@@ -146,53 +154,45 @@ struct DetectionView: View {
                     }
                 }
 
-            Section("Signal Processing") {
-                Toggle("Rebound check", isOn: Binding(
-                    get: { env.store.settings.peakValleyCheckEnabled },
-                    set: { v in mutateSettings { $0.peakValleyCheckEnabled = v } }
+            Section("ML Filter") {
+                Toggle("ML filter", isOn: Binding(
+                    get: { env.store.settings.mlEnabled },
+                    set: { v in mutateSettings { $0.mlEnabled = v } }
                 ))
-                Text("Requires the z-axis signal to have a characteristic bounce-back within 30 ms of the peak. Filters noise and slow desk bumps. Disable if genuine taps are being dropped.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                SliderRow(
-                    label: "Gyro energy gate",
-                    value: Binding(
-                        get: { env.store.settings.gyroEnergyGateThreshold },
-                        set: { v in mutateSettings { $0.gyroEnergyGateThreshold = v } }
-                    ),
-                    range: 0.0...0.5,
-                    format: "%.3f"
-                )
-                Text("Minimum rotation energy (Σω²) during the tap window. Typing rarely couples into rotation so this gate cuts most keyboard false positives. Set to 0 to disable. Start low (~0.01) and raise if typing still triggers.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                if !env.store.settings.micEnabled {
-                    Toggle("IMU side detection", isOn: Binding(
-                        get: { env.store.settings.imuSideEnabled },
-                        set: { v in mutateSettings { $0.imuSideEnabled = v } }
-                    ))
-                    Text("Uses cross-axis correlation and rotational impulse direction to classify taps as left / centre / right without the microphone. Requires side calibration in the Calibration tab.")
+                if env.store.settings.mlEnabled {
+                    SliderRow(
+                        label: "Sensitivity",
+                        value: Binding(
+                            get: { env.store.settings.sensitivityBias },
+                            set: { v in mutateSettings { $0.sensitivityBias = v } }
+                        ),
+                        range: -1.0...1.0,
+                        format: "%.2f"
+                    )
+                    Text("Low (−1) catches lighter taps with more false positives. High (+1) is stricter. Auto-set from your calibration profile.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+            }
 
-                if let f = env.lastTapEvent?.features {
-                    LabeledContent("Roll coupling") {
-                        Text(String(format: "%.3f", f.corr_az_gx))
-                            .font(.system(.caption, design: .monospaced))
-                            .contentTransition(.numericText())
-                    }
-                    LabeledContent("Rise / FWHM") {
-                        Text(String(format: "%.1f ms / %.1f ms", f.riseTime, f.fwhm))
-                            .font(.system(.caption, design: .monospaced))
-                            .contentTransition(.numericText())
-                    }
-                    LabeledContent("Spectral (lo/mid/hi)") {
-                        Text(String(format: "%.2f / %.2f / %.2f", f.spec_low, f.spec_mid, f.spec_high))
-                            .font(.system(.caption, design: .monospaced))
-                            .contentTransition(.numericText())
+            Section("Noise Model") {
+                Toggle("Learn from noise", isOn: Binding(
+                    get: { env.store.settings.noiseModelEnabled },
+                    set: { v in mutateSettings { $0.noiseModelEnabled = v } }
+                ))
+                Text("Passively builds a profile of typing, desk bumps, and trackpad clicks from rejected events. No extra calibration needed.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                LabeledContent("Status") {
+                    Text(noiseModelStatus)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+
+                if env.noiseModel.sampleCount > 0 {
+                    Button("Reset noise model", role: .destructive) {
+                        env.resetNoiseModel()
                     }
                 }
             }
@@ -207,7 +207,7 @@ struct DetectionView: View {
                     range: 1.02...1.5,
                     format: "%.2f g"
                 )
-                Text("Acceleration magnitude that counts as a tap. Lower = more sensitive (light taps). At rest the device reads ~1 g; a gentle knock peaks at 1.05–1.1 g, a firm knock at 1.2–1.4 g.")
+                Text("Acceleration magnitude that counts as a tap. Lower = more sensitive. At rest ~1 g; a gentle knock peaks at 1.05–1.1 g.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -220,7 +220,7 @@ struct DetectionView: View {
                     range: 0.1...3.0,
                     format: "%.1f rad/s"
                 )
-                Text("Gyroscope threshold for rejecting whole-laptop movement. Events where rotation exceeds this are ignored. Lower = stricter (fewer false positives when moving the laptop). Set to max to disable.")
+                Text("Gyroscope threshold for rejecting whole-laptop movement. Set to max to disable.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -233,10 +233,79 @@ struct DetectionView: View {
                     range: 20...200,
                     format: "%.0f ms"
                 )
-                Text("Minimum time between tap events. Prevents a single knock from firing multiple times due to vibration echo.")
+                Text("Minimum time between tap events. Prevents vibration echo.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            DisclosureGroup("Advanced") {
+                Section {
+                    Toggle("Rebound check", isOn: Binding(
+                        get: { env.store.settings.peakValleyCheckEnabled },
+                        set: { v in mutateSettings { $0.peakValleyCheckEnabled = v } }
+                    ))
+                    Text("Requires a z-axis bounce-back within 30 ms of peak. Filters slow desk bumps.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    SliderRow(
+                        label: "Gyro energy gate",
+                        value: Binding(
+                            get: { env.store.settings.gyroEnergyGateThreshold },
+                            set: { v in mutateSettings { $0.gyroEnergyGateThreshold = v } }
+                        ),
+                        range: 0.0...0.5,
+                        format: "%.3f"
+                    )
+                    Text("Minimum rotation energy during the tap window. Set to 0 to disable.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if env.store.settings.mlEnabled {
+                        SliderRow(
+                            label: "Raw ML threshold",
+                            value: Binding(
+                                get: { env.store.settings.mlScoreThreshold },
+                                set: { v in mutateSettings { $0.mlScoreThreshold = v; $0.userOverrodeMLThreshold = true } }
+                            ),
+                            range: 0.0...1.0,
+                            format: "%.2f"
+                        )
+                        Text("Overrides the auto-derived threshold. Re-calibrate to restore automatic tuning.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if !env.store.settings.micEnabled {
+                        Toggle("IMU side detection", isOn: Binding(
+                            get: { env.store.settings.imuSideEnabled },
+                            set: { v in mutateSettings { $0.imuSideEnabled = v } }
+                        ))
+                        Text("Classifies taps as left/centre/right using IMU features. Requires side calibration.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if let f = env.lastTapEvent?.features {
+                        LabeledContent("Roll coupling") {
+                            Text(String(format: "%.3f", f.corr_az_gx))
+                                .font(.system(.caption, design: .monospaced))
+                                .contentTransition(.numericText())
+                        }
+                        LabeledContent("Rise / FWHM") {
+                            Text(String(format: "%.1f ms / %.1f ms", f.riseTime, f.fwhm))
+                                .font(.system(.caption, design: .monospaced))
+                                .contentTransition(.numericText())
+                        }
+                        LabeledContent("Spectral (lo/mid/hi)") {
+                            Text(String(format: "%.2f / %.2f / %.2f", f.spec_low, f.spec_mid, f.spec_high))
+                                .font(.system(.caption, design: .monospaced))
+                                .contentTransition(.numericText())
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, 4)
 
             Section("Timing (ms)") {
                 SliderRow(
