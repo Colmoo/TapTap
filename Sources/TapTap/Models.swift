@@ -200,73 +200,72 @@ struct GestureBinding: Codable, Identifiable, Sendable {
 }
 
 struct AppSettings: Codable, Sendable {
-    /// How long after the first tap to wait for a second tap (ms)
     var doubleTapWindowMs: Double = 300
-    /// How long after the second tap to wait for a third tap (ms)
     var tripleTapWindowMs: Double = 500
-    /// Minimum time between gesture fires (ms)
     var globalCooldownMs: Double = 1000
-    /// Acceleration magnitude (g-force) that triggers a tap event.
-    /// At rest the device reads ~1 g; a light knock typically peaks at 1.05–1.15 g.
     var tapThresholdG: Double = 1.08
-    /// Minimum time (ms) between consecutive tap events (suppresses vibration echo).
     var tapPeakCooldownMs: Double = 50
     var launchAtLogin: Bool = false
     var debugLoggingEnabled: Bool = true
-    /// Whether to apply the Gaussian ML filter when calibration data is available.
     var mlEnabled: Bool = true
-    /// Minimum match score [0–1] for a tap event to pass the ML gate.
-    /// Lower = more permissive (catch light/off-centre taps); higher = stricter.
     var mlScoreThreshold: Double = 0.25
-    /// Peak gyroscope magnitude (rad/s) above which an event is classified as
-    /// whole-laptop movement and rejected.  0 = filter disabled.
     var movementGyroThresholdRadS: Double = 0.5
-
-    // MARK: Microphone / TDOA side detection
-    /// Enable acoustic tap side detection via the built-in stereo microphones.
     var micEnabled: Bool = false
-    /// Peak amplitude must exceed noiseFloor × this multiplier to register.
     var micThresholdMultiplier: Double = 6.0
-    /// |TDOA| below this value (ms) is classified as a centre tap.
-    /// Max possible TDOA on a MacBook (~28 cm keyboard) ≈ 0.82 ms.
     var micSideThresholdMs: Double = 0.2
-
-    // MARK: Microphone / IMU confirmation gate
-    /// When enabled, every IMU tap event is cross-checked against recent mic
-    /// transients.  Events with no matching acoustic transient are downgraded
-    /// by `micUnconfirmedPenalty` before passing through the ML gate.
-    ///
-    /// Effect: lets you lower `tapThresholdG` to catch lighter taps while the
-    /// mic vetos false positives (table bumps, typing vibrations) that move the
-    /// IMU but produce no matching acoustic signature near the microphones.
     var micConfirmationEnabled: Bool = false
-    /// Half-width (seconds) of the acoustic correlation window centred on the
-    /// IMU event timestamp.  Genuine taps arrive at both sensors within ~10–20 ms;
-    /// 30 ms provides headroom without catching unrelated ambient sounds.
     var micCorrelationWindowSec: Double = 0.030
-    /// Score multiplier applied when no acoustic transient is found within the
-    /// correlation window.  0 = always reject unconfirmed events; 1 = no effect.
-    /// Default 0.5 halves the effective ML score, vetoing borderline events while
-    /// still letting through high-confidence IMU hits (e.g. forceful knocks).
     var micUnconfirmedPenalty: Double = 0.5
-
-    // MARK: IMU signal processing upgrades (Steps 1–10)
-
-    /// Step 2 — minimum summed gyro energy (Σω²) accumulated during the tracking
-    /// window before a tap is accepted.  Typing rarely couples into rotation, so
-    /// this gate eliminates most false positives at zero ML cost.
-    /// 0 = disabled (default, backwards-compatible).
     var gyroEnergyGateThreshold: Double = 0.0
-
-    /// Step 3 — when true, require the differentiated z-axis signal to have a
-    /// characteristic rebound valley within 30 ms of the peak (ratio 0.15–0.95).
-    /// Rejects noise and slow desk bumps that lack a physical impact rebound.
-    /// Disabled by default; enable after verifying it doesn't drop genuine taps.
     var peakValleyCheckEnabled: Bool = false
-
-    /// Step 10 — when true, use the IMU cross-axis correlation / rotational impulse
-    /// features together with a trained `SideCalibrationData` centroid model to
-    /// assign `.left` / `.right` / `.center` to each tap without the microphone.
-    /// Requires running side calibration in CalibrationManager first.
     var imuSideEnabled: Bool = false
+
+    // MARK: Precision & noise model (new)
+    /// −1 (permissive) → +1 (strict). Offsets the auto-derived ML threshold by ±0.15.
+    var sensitivityBias: Double = 0.0
+    /// Gates both noise model accumulation and its scoring contribution.
+    var noiseModelEnabled: Bool = false
+    /// True when the user manually moved the mlScoreThreshold slider in Advanced.
+    /// Prevents auto-threshold from overwriting it. Reset to false on calibration complete.
+    var userOverrodeMLThreshold: Bool = false
+
+    // MARK: Backward-compatible decoder
+
+    enum CodingKeys: String, CodingKey {
+        case doubleTapWindowMs, tripleTapWindowMs, globalCooldownMs
+        case tapThresholdG, tapPeakCooldownMs, launchAtLogin, debugLoggingEnabled
+        case mlEnabled, mlScoreThreshold, movementGyroThresholdRadS
+        case micEnabled, micThresholdMultiplier, micSideThresholdMs
+        case micConfirmationEnabled, micCorrelationWindowSec, micUnconfirmedPenalty
+        case gyroEnergyGateThreshold, peakValleyCheckEnabled, imuSideEnabled
+        case sensitivityBias, noiseModelEnabled, userOverrodeMLThreshold
+    }
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        doubleTapWindowMs         = (try? c.decode(Double.self, forKey: .doubleTapWindowMs))         ?? 300
+        tripleTapWindowMs         = (try? c.decode(Double.self, forKey: .tripleTapWindowMs))         ?? 500
+        globalCooldownMs          = (try? c.decode(Double.self, forKey: .globalCooldownMs))          ?? 1000
+        tapThresholdG             = (try? c.decode(Double.self, forKey: .tapThresholdG))             ?? 1.08
+        tapPeakCooldownMs         = (try? c.decode(Double.self, forKey: .tapPeakCooldownMs))         ?? 50
+        launchAtLogin             = (try? c.decode(Bool.self,   forKey: .launchAtLogin))             ?? false
+        debugLoggingEnabled       = (try? c.decode(Bool.self,   forKey: .debugLoggingEnabled))       ?? true
+        mlEnabled                 = (try? c.decode(Bool.self,   forKey: .mlEnabled))                 ?? true
+        mlScoreThreshold          = (try? c.decode(Double.self, forKey: .mlScoreThreshold))          ?? 0.25
+        movementGyroThresholdRadS = (try? c.decode(Double.self, forKey: .movementGyroThresholdRadS)) ?? 0.5
+        micEnabled                = (try? c.decode(Bool.self,   forKey: .micEnabled))                ?? false
+        micThresholdMultiplier    = (try? c.decode(Double.self, forKey: .micThresholdMultiplier))    ?? 6.0
+        micSideThresholdMs        = (try? c.decode(Double.self, forKey: .micSideThresholdMs))        ?? 0.2
+        micConfirmationEnabled    = (try? c.decode(Bool.self,   forKey: .micConfirmationEnabled))    ?? false
+        micCorrelationWindowSec   = (try? c.decode(Double.self, forKey: .micCorrelationWindowSec))   ?? 0.030
+        micUnconfirmedPenalty     = (try? c.decode(Double.self, forKey: .micUnconfirmedPenalty))     ?? 0.5
+        gyroEnergyGateThreshold   = (try? c.decode(Double.self, forKey: .gyroEnergyGateThreshold))  ?? 0.0
+        peakValleyCheckEnabled    = (try? c.decode(Bool.self,   forKey: .peakValleyCheckEnabled))    ?? false
+        imuSideEnabled            = (try? c.decode(Bool.self,   forKey: .imuSideEnabled))            ?? false
+        sensitivityBias           = (try? c.decode(Double.self, forKey: .sensitivityBias))           ?? 0.0
+        noiseModelEnabled         = (try? c.decode(Bool.self,   forKey: .noiseModelEnabled))         ?? false
+        userOverrodeMLThreshold   = (try? c.decode(Bool.self,   forKey: .userOverrodeMLThreshold))   ?? false
+    }
 }

@@ -132,6 +132,7 @@ final class AppEnvironment {
             if let tripleMs = data.learnedTripleTapWindowMs {
                 s.tripleTapWindowMs = tripleMs
             }
+            s.userOverrodeMLThreshold = false   // re-enable auto-threshold after recalibration
             self.store.update(settings: s)
             self.applySettings()
 
