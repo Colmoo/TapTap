@@ -289,6 +289,8 @@ struct NoiseModel: Codable, Sendable {
                 let oldV     = featureStd[i] * featureStd[i]
                 featureStd[i]  = sqrt(max(1e-6, (1 - α) * (oldV + α * pow(features[i] - old, 2))))
             }
+        } else {
+            return  // dimension mismatch — do not count toward activation
         }
         sampleCount += 1
         updatedAt = Date()
