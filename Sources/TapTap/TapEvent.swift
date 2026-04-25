@@ -257,6 +257,65 @@ struct CalibrationData: Codable, Sendable {
     }
 }
 
+// MARK: - Noise model
+
+/// Passive EMA model fitted from strongly-rejected IMU events (score < 0.10).
+/// Activates for scoring once sampleCount ≥ 30; before that it accumulates silently.
+struct NoiseModel: Codable, Sendable {
+    var updatedAt: Date
+    var sampleCount: Int
+    var featureMean: [Double]   // 17 elements — same space as CalibrationData
+    var featureStd:  [Double]
+
+    static let activationThreshold = 30
+    static let persistenceKey = "TapTap.noiseModel.v1"
+
+    static var empty: NoiseModel {
+        NoiseModel(updatedAt: Date(), sampleCount: 0, featureMean: [], featureStd: [])
+    }
+
+    var isActive: Bool { sampleCount >= Self.activationThreshold }
+
+    /// EMA update with α = 0.05. First call seeds the mean; subsequent calls refine it.
+    mutating func update(features: [Double]) {
+        let α: Double = 0.05
+        if featureMean.isEmpty {
+            featureMean = features
+            featureStd  = features.map { _ in 1.0 }
+        } else if features.count == featureMean.count {
+            for i in 0..<features.count {
+                let old      = featureMean[i]
+                featureMean[i] = old + α * (features[i] - old)
+                let oldV     = featureStd[i] * featureStd[i]
+                featureStd[i]  = sqrt(max(1e-6, (1 - α) * (oldV + α * pow(features[i] - old, 2))))
+            }
+        }
+        sampleCount += 1
+        updatedAt = Date()
+    }
+
+    /// Diagonal Mahalanobis score in [0, 1]. 1.0 = looks exactly like noise centroid.
+    func score(for features: [Double]) -> Double {
+        guard features.count == featureMean.count, !featureMean.isEmpty else { return 0 }
+        var zSum = 0.0; var count = 0
+        for i in 0..<features.count {
+            guard featureStd[i] > 1e-6 else { continue }
+            zSum += abs((features[i] - featureMean[i]) / featureStd[i])
+            count += 1
+        }
+        guard count > 0 else { return 0 }
+        return max(0, 1.0 - (zSum / Double(count)) / 3.0)
+    }
+
+    /// Likelihood-ratio score. rampWeight goes 0→1 as sampleCount grows from 30→100.
+    /// Returns tapScore unchanged when the noise model is not yet active.
+    func finalScore(tapScore: Double, noiseScore: Double) -> Double {
+        guard isActive else { return tapScore }
+        let ramp = min(1.0, Double(sampleCount - Self.activationThreshold) / 70.0)
+        return tapScore / (tapScore + noiseScore * ramp + 1e-9)
+    }
+}
+
 // MARK: - Array statistics helpers (private)
 
 private extension [Double] {
