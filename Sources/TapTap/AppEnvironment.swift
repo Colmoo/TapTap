@@ -220,8 +220,8 @@ final class AppEnvironment {
 
                 let threshold = self.effectiveMLThreshold(for: data)
                 guard finalScore >= threshold else {
-                    // Feed noise model only from events the ML scorer rejects strongly.
-                    // Events that pass via STA/LTA but have low mlScore are real taps — skip.
+                    // Feed noise model only when both scorers rejected the event strongly
+                    // (finalScore < threshold and raw mlScore < 0.10).
                     if s.noiseModelEnabled,
                        mlScore < 0.10,
                        let fv = event.features?.toArray() {

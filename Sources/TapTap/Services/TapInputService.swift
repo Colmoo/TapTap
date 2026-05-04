@@ -275,7 +275,7 @@ final class TapInputService {
 
         // STA/LTA energy ratio — detects soft taps independently of calibration.
         // STA: 3 samples (~15 ms) starting at peak.
-        // LTA: 100 samples (~500 ms) ending 2 samples before peak (no contamination).
+        // LTA: 100 samples (~500 ms) ending 1 sample before peak (no contamination).
         let staLtaScore: Double = {
             let staCount  = max(1, Int(0.015 * sr))   // 3 samples
             let ltaCount  = Int(0.500 * sr)            // 100 samples
