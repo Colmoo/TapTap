@@ -55,11 +55,7 @@ final class AppEnvironment {
         isListening = input.isRunning
         isGyroscopeAvailable = input.isGyroscopeAvailable
         if isListening {
-            if input.isAccelerometerAvailable {
-                logger.log("Listening started — accelerometer connected", kind: .system)
-            } else {
-                logger.log("Listening started — accelerometer unavailable on this device", kind: .system)
-            }
+            logger.log(String(format: "Listening started (threshold %.3f g)", store.settings.tapThresholdG), kind: .system)
         }
         if store.settings.micEnabled {
             mic.start()
@@ -180,7 +176,7 @@ final class AppEnvironment {
 
             if self.store.settings.debugLoggingEnabled {
                 self.logger.log(
-                    String(format: "Raw tap: %.3fg", event.peakMagnitude),
+                    String(format: "Raw tap: %.3fg  sta=%.2f", event.peakMagnitude, event.staLtaScore),
                     kind: .system
                 )
             }
@@ -204,33 +200,38 @@ final class AppEnvironment {
                self.calibration.isMLReady,
                let data = self.calibration.calibrationData {
 
-                let tapScore = data.matchScore(for: event)
+                let s        = self.store.settings
+                let mlScore  = data.matchScore(for: event)
+                let staScore = s.staLtaEnabled ? event.staLtaScore : 0.0
 
-                // Apply likelihood ratio when noise model is active
-                let finalScore: Double
-                let s = self.store.settings
+                // Apply likelihood ratio when noise model is active.
+                // The ratio operates on the raw ML score so noise-model semantics are preserved;
+                // STA/LTA bypass is applied after.
+                let mlFinalScore: Double
                 if s.noiseModelEnabled, self.noiseModel.isActive,
                    let fv = event.features?.toArray() {
                     let noiseScore = self.noiseModel.score(for: fv)
-                    finalScore = self.noiseModel.finalScore(tapScore: tapScore, noiseScore: noiseScore)
+                    mlFinalScore = self.noiseModel.finalScore(tapScore: mlScore, noiseScore: noiseScore)
                 } else {
-                    finalScore = tapScore
+                    mlFinalScore = mlScore
                 }
+                let finalScore = max(mlFinalScore, staScore)
                 self.lastTapScore = finalScore
 
                 let threshold = self.effectiveMLThreshold(for: data)
                 guard finalScore >= threshold else {
-                    // Feed noise model: only strongly-rejected events (raw tapScore < 0.10)
-                    if self.store.settings.noiseModelEnabled,
-                       tapScore < 0.10,
+                    // Feed noise model only when both scorers rejected the event strongly
+                    // (finalScore < threshold and raw mlScore < 0.10).
+                    if s.noiseModelEnabled,
+                       mlScore < 0.10,
                        let fv = event.features?.toArray() {
                         self.noiseModel.update(features: fv)
                         self.persistNoiseModel()
                     }
-                    if self.store.settings.debugLoggingEnabled {
+                    if s.debugLoggingEnabled {
                         self.logger.log(
-                            String(format: "ML filtered tap %.2fg (tap %.2f, final %.2f, threshold %.2f)",
-                                   event.peakMagnitude, tapScore, finalScore, threshold),
+                            String(format: "ML filtered: %.2fg (ml=%.2f, sta=%.2f, final=%.2f, thresh=%.2f)",
+                                   event.peakMagnitude, mlScore, event.staLtaScore, finalScore, threshold),
                             kind: .system
                         )
                     }
@@ -336,8 +337,23 @@ final class AppEnvironment {
             self.logger.log("Tap filtered: \(reason)", kind: .system)
         }
 
+        input.onDiagnosticSample = { [weak self] magnitude, threshold in
+            guard let self, self.store.settings.debugLoggingEnabled else { return }
+            self.logger.log(
+                String(format: "IMU alive — mag %.4f g, threshold %.3f g", magnitude, threshold),
+                kind: .system
+            )
+        }
+
         input.onAvailabilityChanged = { [weak self] available in
-            self?.isAccelerometerAvailable = available
+            guard let self else { return }
+            self.isAccelerometerAvailable = available
+            if available {
+                self.logger.log(
+                    String(format: "Accelerometer connected (threshold %.3f g)", self.store.settings.tapThresholdG),
+                    kind: .system
+                )
+            }
         }
 
         mic.onAvailabilityChanged = { [weak self] available in
