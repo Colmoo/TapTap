@@ -159,13 +159,6 @@ struct DetectionView: View {
                     get: { env.store.settings.mlEnabled },
                     set: { v in mutateSettings { $0.mlEnabled = v } }
                 ))
-                Toggle("STA/LTA energy gate", isOn: Binding(
-                    get: { env.store.settings.staLtaEnabled },
-                    set: { v in mutateSettings { $0.staLtaEnabled = v } }
-                ))
-                Text("Detects taps by energy spike relative to background noise. Lets soft taps through even before calibration. Disable only if you see false positives from desk vibration.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
                 if env.store.settings.mlEnabled {
                     SliderRow(
                         label: "Sensitivity",
@@ -177,6 +170,13 @@ struct DetectionView: View {
                         format: "%.2f"
                     )
                     Text("Low (−1) catches lighter taps with more false positives. High (+1) is stricter. Auto-set from your calibration profile.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Toggle("STA/LTA energy gate", isOn: Binding(
+                        get: { env.store.settings.staLtaEnabled },
+                        set: { v in mutateSettings { $0.staLtaEnabled = v } }
+                    ))
+                    Text("Detects taps by energy spike relative to background noise. Lets soft taps through even before calibration. Disable only if you see false positives from desk vibration.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
