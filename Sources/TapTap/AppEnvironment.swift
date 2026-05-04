@@ -142,7 +142,7 @@ final class AppEnvironment {
     private func effectiveMLThreshold(for data: CalibrationData) -> Double {
         let s = store.settings
         if s.userOverrodeMLThreshold { return s.mlScoreThreshold }
-        let auto = data.calibrationFloorScore * 0.5
+        let auto = data.calibrationFloorScore * 0.85
         return min(0.99, max(0.01, auto + s.sensitivityBias * 0.15))
     }
 
@@ -203,17 +203,19 @@ final class AppEnvironment {
                 let s        = self.store.settings
                 let mlScore  = data.matchScore(for: event)
                 let staScore = s.staLtaEnabled ? event.staLtaScore : 0.0
-                let blended  = max(mlScore, staScore)
 
-                // Apply likelihood ratio when noise model is active
-                let finalScore: Double
+                // Apply likelihood ratio when noise model is active.
+                // The ratio operates on the raw ML score so noise-model semantics are preserved;
+                // STA/LTA bypass is applied after.
+                let mlFinalScore: Double
                 if s.noiseModelEnabled, self.noiseModel.isActive,
                    let fv = event.features?.toArray() {
                     let noiseScore = self.noiseModel.score(for: fv)
-                    finalScore = self.noiseModel.finalScore(tapScore: blended, noiseScore: noiseScore)
+                    mlFinalScore = self.noiseModel.finalScore(tapScore: mlScore, noiseScore: noiseScore)
                 } else {
-                    finalScore = blended
+                    mlFinalScore = mlScore
                 }
+                let finalScore = max(mlFinalScore, staScore)
                 self.lastTapScore = finalScore
 
                 let threshold = self.effectiveMLThreshold(for: data)
