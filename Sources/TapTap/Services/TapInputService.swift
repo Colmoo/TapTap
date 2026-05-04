@@ -274,10 +274,9 @@ final class TapInputService {
         }
 
         // STA/LTA energy ratio — detects soft taps independently of calibration.
-        // STA: 3 samples (~15 ms) centred on peak.
+        // STA: 3 samples (~15 ms) starting at peak.
         // LTA: 100 samples (~500 ms) ending 2 samples before peak (no contamination).
         let staLtaScore: Double = {
-            let sr        = Self.sampleRate
             let staCount  = max(1, Int(0.015 * sr))   // 3 samples
             let ltaCount  = Int(0.500 * sr)            // 100 samples
             let staSamples = imuBuf.slice(from: trackingPeakBufIdx - staCount / 2, count: staCount)
