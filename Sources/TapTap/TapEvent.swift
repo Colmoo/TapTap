@@ -30,6 +30,8 @@ struct TapEvent: Codable, Sendable {
     /// Full feature vector computed from the aligned differentiated window (Steps 5–9).
     /// Nil when gyroscope is unavailable or the buffer hasn't warmed up yet.
     var features: TapFeatureVector?
+    /// STA/LTA energy ratio score (0–1). 0 when STA/LTA is disabled or buffer not yet warmed up.
+    var staLtaScore: Double = 0.0
 
     /// Fraction of total magnitude carried by the Z axis.
     ///
