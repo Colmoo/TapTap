@@ -228,6 +228,7 @@ struct AppSettings: Codable, Sendable {
     /// True when the user manually moved the mlScoreThreshold slider in Advanced.
     /// Prevents auto-threshold from overwriting it. Reset to false on calibration complete.
     var userOverrodeMLThreshold: Bool = false
+    var staLtaEnabled: Bool = true
 
     // MARK: Backward-compatible decoder
 
@@ -238,7 +239,7 @@ struct AppSettings: Codable, Sendable {
         case micEnabled, micThresholdMultiplier, micSideThresholdMs
         case micConfirmationEnabled, micCorrelationWindowSec, micUnconfirmedPenalty
         case gyroEnergyGateThreshold, peakValleyCheckEnabled, imuSideEnabled
-        case sensitivityBias, noiseModelEnabled, userOverrodeMLThreshold
+        case sensitivityBias, noiseModelEnabled, userOverrodeMLThreshold, staLtaEnabled
     }
 
     init() {}
@@ -267,5 +268,6 @@ struct AppSettings: Codable, Sendable {
         sensitivityBias           = (try? c.decode(Double.self, forKey: .sensitivityBias))           ?? 0.0
         noiseModelEnabled         = (try? c.decode(Bool.self,   forKey: .noiseModelEnabled))         ?? false
         userOverrodeMLThreshold   = (try? c.decode(Bool.self,   forKey: .userOverrodeMLThreshold))   ?? false
+        staLtaEnabled             = (try? c.decode(Bool.self,   forKey: .staLtaEnabled))             ?? true
     }
 }
