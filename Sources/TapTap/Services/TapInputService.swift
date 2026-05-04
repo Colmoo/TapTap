@@ -33,6 +33,8 @@ final class TapInputService {
     var onMovementRejected:   ((_ gyroMag: Double, _ threshold: Double) -> Void)?
     /// Fired when a tap crosses the threshold but is silently dropped before reaching onTapEvent.
     var onTapFiltered:        ((_ reason: String) -> Void)?
+    /// Fired ~once per second with (magnitude, threshold) for liveness logging.
+    var onDiagnosticSample:   ((Double, Double) -> Void)?
 
     // MARK: - Settings
 
@@ -86,6 +88,7 @@ final class TapInputService {
     private var trackingPeakBufIdx: Int = 0
     /// Step 2: accumulated raw gyro energy during the window.
     private var trackingGyroEnergy: Double = 0
+    private var sampleCount: Int = 0
 
     // MARK: - Lifecycle
 
@@ -150,6 +153,11 @@ final class TapInputService {
                                 dgx: latestDGX, dgy: latestDGY, dgz: latestDGZ))
 
         let magnitude = (x*x + y*y + z*z).squareRoot()
+
+        sampleCount += 1
+        if sampleCount % 200 == 0 {
+            onDiagnosticSample?(magnitude, tapThresholdG)
+        }
 
         if isTracking {
             trackingSamples.append(magnitude)
@@ -265,7 +273,23 @@ final class TapInputService {
             tapFeatures = window.featureVector()
         }
 
-        let event = TapEvent(
+        // STA/LTA energy ratio — detects soft taps independently of calibration.
+        // STA: 3 samples (~15 ms) centred on peak.
+        // LTA: 100 samples (~500 ms) ending 2 samples before peak (no contamination).
+        let staLtaScore: Double = {
+            let sr        = Self.sampleRate
+            let staCount  = max(1, Int(0.015 * sr))   // 3 samples
+            let ltaCount  = Int(0.500 * sr)            // 100 samples
+            let staSamples = imuBuf.slice(from: trackingPeakBufIdx - staCount / 2, count: staCount)
+            let ltaSamples = imuBuf.slice(from: trackingPeakBufIdx - ltaCount - 2, count: ltaCount)
+            guard !staSamples.isEmpty, ltaSamples.count >= ltaCount / 2 else { return 0.0 }
+            let staMean = staSamples.map { $0.dax*$0.dax + $0.day*$0.day + $0.daz*$0.daz }.reduce(0, +) / Double(staSamples.count)
+            let ltaMean = ltaSamples.map { $0.dax*$0.dax + $0.day*$0.day + $0.daz*$0.daz }.reduce(0, +) / Double(ltaSamples.count)
+            guard ltaMean > 1e-12 else { return 0.0 }
+            return min(1.0, max(0.0, (staMean / ltaMean - 1.0) / 9.0))
+        }()
+
+        var event = TapEvent(
             timestamp:            trackingStart,
             peakMagnitude:        trackingPeakMag,
             peakX:                trackingPeakX,
@@ -276,6 +300,7 @@ final class TapInputService {
             riseTimeMs:           riseTimeMs,
             features:             tapFeatures
         )
+        event.staLtaScore = staLtaScore
         onTapEvent?(event)
     }
 
