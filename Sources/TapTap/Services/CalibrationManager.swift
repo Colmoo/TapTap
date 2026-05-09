@@ -88,8 +88,8 @@ final class CalibrationManager {
 
     // MARK: - Side calibration state (Step 10)
 
-    private static let sidePersistenceKey = "TapTap.sideCalibration.v1"
-    static let targetSideCount = 20  // taps per side
+    private static let sidePersistenceKey = "TapTap.sideCalibration.v2"
+    static let targetSideCount = 30  // taps per side
 
     private(set) var sideCalibrationData: SideCalibrationData? = nil
     private(set) var sidePhase: SideCalibrationSide? = nil  // nil = not calibrating
