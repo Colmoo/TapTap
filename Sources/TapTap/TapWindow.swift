@@ -169,42 +169,78 @@ struct TapFeatureVector: Codable, Sendable {
 
 // MARK: - SideCalibrationData
 
-/// Nearest-centroid classifier for left/right side detection via IMU features.
-/// Calibrate by collecting ~20 labelled taps per side and calling `fit(left:right:)`.
+/// Diagonal-LDA classifier for left/right/center side detection via IMU features.
+///
+/// Fit by calling `fit(leftSamples:rightSamples:)` with ~30 labelled feature
+/// vectors per side.  `predictSide` returns `.center` when the tap lands near
+/// the decision boundary (within `ldaMargin` of `ldaThreshold`).
 struct SideCalibrationData: Codable, Sendable {
     let calibratedAt: Date
-    let leftCentroid: [Double]   // mean feature vector for left taps
-    let rightCentroid: [Double]  // mean feature vector for right taps
     let sampleCount: Int
+    /// LDA projection vector — one weight per feature (17 elements).
+    let ldaWeights: [Double]
+    /// Midpoint between the projected class means.
+    /// score > threshold + margin → .left
+    /// score < threshold - margin → .right
+    /// otherwise                 → .center
+    let ldaThreshold: Double
+    /// Half-width of the center zone (0.7 × within-class std on the LDA axis).
+    let ldaMargin: Double
 
-    /// Classify a feature vector by nearest Euclidean centroid.
+    // MARK: - Prediction
+
     func predictSide(features: TapFeatureVector) -> TapSide {
         let fv = features.toArray()
-        guard fv.count == leftCentroid.count,
-              fv.count == rightCentroid.count else { return .center }
-        let dLeft  = euclidean(fv, leftCentroid)
-        let dRight = euclidean(fv, rightCentroid)
-        if dLeft < dRight { return .left }
-        if dRight < dLeft { return .right }
+        guard fv.count == ldaWeights.count else { return .center }
+        let score = zip(fv, ldaWeights).reduce(0.0) { $0 + $1.0 * $1.1 }
+        if score > ldaThreshold + ldaMargin { return .left }
+        if score < ldaThreshold - ldaMargin { return .right }
         return .center
     }
 
+    // MARK: - Factory
+
     static func fit(leftSamples: [[Double]], rightSamples: [[Double]]) -> SideCalibrationData? {
         guard !leftSamples.isEmpty, !rightSamples.isEmpty,
-              let dim = leftSamples.first?.count, dim > 0 else { return nil }
-        func mean(_ samples: [[Double]]) -> [Double] {
-            let n = Double(samples.count)
-            return (0..<dim).map { i in samples.map { $0[i] }.reduce(0, +) / n }
-        }
+              let dim = leftSamples.first?.count, dim > 0,
+              rightSamples.first?.count == dim else { return nil }
+
+        let nL = Double(leftSamples.count)
+        let nR = Double(rightSamples.count)
+
+        // Per-class means
+        var muL = [Double](repeating: 0, count: dim)
+        var muR = [Double](repeating: 0, count: dim)
+        for s in leftSamples  { for i in 0..<dim { muL[i] += s[i] / nL } }
+        for s in rightSamples { for i in 0..<dim { muR[i] += s[i] / nR } }
+
+        // Pooled within-class variance per feature
+        let denom = max(nL + nR - 2, 1)
+        var pooledVar = [Double](repeating: 0, count: dim)
+        for s in leftSamples  { for i in 0..<dim { pooledVar[i] += pow(s[i] - muL[i], 2) / denom } }
+        for s in rightSamples { for i in 0..<dim { pooledVar[i] += pow(s[i] - muR[i], 2) / denom } }
+
+        // LDA weight: between-class difference / pooled variance
+        let w = (0..<dim).map { i in (muL[i] - muR[i]) / max(pooledVar[i], 1e-9) }
+
+        // Projected class means → decision threshold at midpoint
+        let projL = zip(w, muL).reduce(0.0) { $0 + $1.0 * $1.1 }
+        let projR = zip(w, muR).reduce(0.0) { $0 + $1.0 * $1.1 }
+        let threshold = (projL + projR) / 2
+
+        // Within-class spread on the LDA axis → center margin
+        var ssW = 0.0
+        for s in leftSamples  { let p = zip(w, s).reduce(0.0) { $0 + $1.0 * $1.1 }; ssW += pow(p - projL, 2) }
+        for s in rightSamples { let p = zip(w, s).reduce(0.0) { $0 + $1.0 * $1.1 }; ssW += pow(p - projR, 2) }
+        let sigmaLDA = (ssW / denom).squareRoot()
+        let margin   = 0.7 * sigmaLDA
+
         return SideCalibrationData(
-            calibratedAt:   Date(),
-            leftCentroid:   mean(leftSamples),
-            rightCentroid:  mean(rightSamples),
-            sampleCount:    leftSamples.count + rightSamples.count
+            calibratedAt: Date(),
+            sampleCount:  leftSamples.count + rightSamples.count,
+            ldaWeights:   w,
+            ldaThreshold: threshold,
+            ldaMargin:    margin
         )
     }
-}
-
-private func euclidean(_ a: [Double], _ b: [Double]) -> Double {
-    zip(a, b).reduce(0.0) { $0 + ($1.0 - $1.1) * ($1.0 - $1.1) }.squareRoot()
 }
