@@ -13,7 +13,7 @@ struct BindingsView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
 
-                if !env.store.settings.micEnabled {
+                if !(env.store.settings.micEnabled || env.store.settings.imuSideEnabled) {
                     MicUpsellBanner()
                         .padding(.horizontal, 20)
                 }
@@ -34,17 +34,18 @@ struct KeyboardMapView: View {
     @Environment(AppEnvironment.self) var env
     @Binding var editingGesture: GestureType?
 
-    var micEnabled: Bool { env.store.settings.micEnabled }
+    var sideEnabled: Bool {
+        env.store.settings.micEnabled || env.store.settings.imuSideEnabled
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            // Row label
             HStack(spacing: 6) {
                 Text("Tap Zones")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
-                if micEnabled {
-                    Label("9 gestures", systemImage: "mic.fill")
+                if sideEnabled {
+                    Label("9 gestures", systemImage: env.store.settings.micEnabled ? "mic.fill" : "gyroscope")
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(.green)
                         .padding(.horizontal, 8)
@@ -60,11 +61,10 @@ struct KeyboardMapView: View {
                 }
             }
 
-            // The three-zone keyboard card
             HStack(spacing: 0) {
                 TapZoneColumn(
                     side: .left,
-                    active: micEnabled,
+                    active: sideEnabled,
                     editingGesture: $editingGesture
                 )
 
@@ -80,7 +80,7 @@ struct KeyboardMapView: View {
 
                 TapZoneColumn(
                     side: .right,
-                    active: micEnabled,
+                    active: sideEnabled,
                     editingGesture: $editingGesture
                 )
             }
@@ -172,14 +172,13 @@ struct TapZoneColumn: View {
             .padding(.vertical, 4)
         }
         .frame(maxWidth: .infinity)
-        // Dim + overlay when mic is off
         .opacity(active ? 1 : 0.4)
         .overlay {
             if !active {
                 VStack(spacing: 6) {
-                    Image(systemName: "mic.slash")
+                    Image(systemName: "hand.raised.slash")
                         .font(.system(size: 18))
-                    Text("Mic off")
+                    Text("Side off")
                         .font(.caption2)
                 }
                 .foregroundStyle(.tertiary)
@@ -287,7 +286,7 @@ struct MicUpsellBanner: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "mic.fill")
+            Image(systemName: "hand.tap.fill")
                 .font(.title3)
                 .foregroundStyle(.blue)
                 .frame(width: 34, height: 34)
@@ -296,21 +295,32 @@ struct MicUpsellBanner: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Unlock Left & Right Zones")
                     .font(.subheadline.weight(.semibold))
-                Text("Enable microphone detection to get 9 bindable gestures instead of 3.")
+                Text("Enable mic detection or IMU side calibration (Detection tab) to get 9 gestures.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
-            Button("Enable") {
-                var s = env.store.settings
-                s.micEnabled = true
-                env.store.update(settings: s)
-                env.applySettings()
+            VStack(spacing: 6) {
+                Button("Enable Mic") {
+                    var s = env.store.settings
+                    s.micEnabled = true
+                    env.store.update(settings: s)
+                    env.applySettings()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+
+                Button("Enable IMU") {
+                    var s = env.store.settings
+                    s.imuSideEnabled = true
+                    env.store.update(settings: s)
+                    env.applySettings()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
         }
         .padding(14)
         .background(.blue.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
