@@ -115,7 +115,6 @@ final class AppEnvironment {
         input.gyroEnergyGateThreshold    = s.gyroEnergyGateThreshold
         input.peakValleyCheckEnabled     = s.peakValleyCheckEnabled
         mic.thresholdMultiplier = s.micThresholdMultiplier
-        mic.sideThresholdMs     = s.micSideThresholdMs
         // Start or stop mic to match the toggled setting while listening.
         if isListening {
             if s.micEnabled && !mic.isRunning { mic.start() }
@@ -287,14 +286,11 @@ final class AppEnvironment {
             }
 
             // Tap accepted — forward to gesture classifier with side detection.
-            // Priority: mic TDOA (most accurate) → IMU centroid (no mic needed) → center.
             let side: TapSide
             let settings = self.store.settings
-            if settings.micEnabled {
-                side = self.mic.recentSide(since: event.timestamp.addingTimeInterval(-0.2))
-            } else if settings.imuSideEnabled,
-                      let features = event.features,
-                      let sideModel = self.calibration.sideCalibrationData {
+            if settings.imuSideEnabled,
+               let features = event.features,
+               let sideModel = self.calibration.sideCalibrationData {
                 side = sideModel.predictSide(features: features)
             } else {
                 side = .center
@@ -335,14 +331,6 @@ final class AppEnvironment {
         input.onTapFiltered = { [weak self] reason in
             guard let self, self.store.settings.debugLoggingEnabled else { return }
             self.logger.log("Tap filtered: \(reason)", kind: .system)
-        }
-
-        input.onDiagnosticSample = { [weak self] magnitude, threshold in
-            guard let self, self.store.settings.debugLoggingEnabled else { return }
-            self.logger.log(
-                String(format: "IMU alive — mag %.4f g, threshold %.3f g", magnitude, threshold),
-                kind: .system
-            )
         }
 
         input.onAvailabilityChanged = { [weak self] available in
