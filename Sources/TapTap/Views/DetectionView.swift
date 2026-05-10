@@ -100,19 +100,6 @@ struct DetectionView: View {
                         Text("Peak amplitude must exceed noise floor × this multiplier. Lower = more sensitive but more false positives.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-
-                        SliderRow(
-                            label: "Centre threshold",
-                            value: Binding(
-                                get: { env.store.settings.micSideThresholdMs },
-                                set: { v in mutateSettings { $0.micSideThresholdMs = v } }
-                            ),
-                            range: 0.05...0.6,
-                            format: "%.2f ms"
-                        )
-                        Text("Max TDOA to classify as a centre tap. Max possible on a MacBook ≈ 0.82 ms.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
 
                     Section("Mic Confirmation (IMU accuracy)") {
