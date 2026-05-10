@@ -190,7 +190,11 @@ struct SideCalibrationData: Codable, Sendable {
 
     func predictSide(features: TapFeatureVector) -> TapSide {
         let fv = features.toArray()
-        guard fv.count == pooledVar.count else { return .center }
+        guard fv.count == pooledVar.count,
+              fv.count == meanLeft.count,
+              fv.count == meanRight.count,
+              fv.count == meanCenter.count
+        else { return .center }
         let dL = mahalanobisSq(fv, mean: meanLeft)
         let dR = mahalanobisSq(fv, mean: meanRight)
         let dC = mahalanobisSq(fv, mean: meanCenter)
@@ -202,9 +206,9 @@ struct SideCalibrationData: Codable, Sendable {
     private func mahalanobisSq(_ x: [Double], mean: [Double]) -> Double {
         var sum = 0.0
         for i in 0..<x.count {
-            guard pooledVar[i] > 1e-9 else { continue }
+            let v = max(pooledVar[i], 1e-9)
             let d = x[i] - mean[i]
-            sum += d * d / pooledVar[i]
+            sum += d * d / v
         }
         return sum
     }
@@ -217,9 +221,15 @@ struct SideCalibrationData: Codable, Sendable {
         centerSamples: [[Double]]
     ) -> SideCalibrationData? {
         guard !leftSamples.isEmpty, !rightSamples.isEmpty, !centerSamples.isEmpty,
+              leftSamples.count >= 2, rightSamples.count >= 2, centerSamples.count >= 2,
               let dim = leftSamples.first?.count, dim > 0,
               rightSamples.first?.count  == dim,
               centerSamples.first?.count == dim
+        else { return nil }
+
+        guard leftSamples.allSatisfy({ $0.count == dim }),
+              rightSamples.allSatisfy({ $0.count == dim }),
+              centerSamples.allSatisfy({ $0.count == dim })
         else { return nil }
 
         let nL = Double(leftSamples.count)
