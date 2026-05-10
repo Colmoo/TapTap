@@ -212,7 +212,6 @@ struct AppSettings: Codable, Sendable {
     var movementGyroThresholdRadS: Double = 0.5
     var micEnabled: Bool = false
     var micThresholdMultiplier: Double = 6.0
-    var micSideThresholdMs: Double = 0.2
     var micConfirmationEnabled: Bool = false
     var micCorrelationWindowSec: Double = 0.030
     var micUnconfirmedPenalty: Double = 0.5
@@ -236,7 +235,7 @@ struct AppSettings: Codable, Sendable {
         case doubleTapWindowMs, tripleTapWindowMs, globalCooldownMs
         case tapThresholdG, tapPeakCooldownMs, launchAtLogin, debugLoggingEnabled
         case mlEnabled, mlScoreThreshold, movementGyroThresholdRadS
-        case micEnabled, micThresholdMultiplier, micSideThresholdMs
+        case micEnabled, micThresholdMultiplier
         case micConfirmationEnabled, micCorrelationWindowSec, micUnconfirmedPenalty
         case gyroEnergyGateThreshold, peakValleyCheckEnabled, imuSideEnabled
         case sensitivityBias, noiseModelEnabled, userOverrodeMLThreshold, staLtaEnabled
@@ -258,7 +257,6 @@ struct AppSettings: Codable, Sendable {
         movementGyroThresholdRadS = (try? c.decode(Double.self, forKey: .movementGyroThresholdRadS)) ?? 0.5
         micEnabled                = (try? c.decode(Bool.self,   forKey: .micEnabled))                ?? false
         micThresholdMultiplier    = (try? c.decode(Double.self, forKey: .micThresholdMultiplier))    ?? 6.0
-        micSideThresholdMs        = (try? c.decode(Double.self, forKey: .micSideThresholdMs))        ?? 0.2
         micConfirmationEnabled    = (try? c.decode(Bool.self,   forKey: .micConfirmationEnabled))    ?? false
         micCorrelationWindowSec   = (try? c.decode(Double.self, forKey: .micCorrelationWindowSec))   ?? 0.030
         micUnconfirmedPenalty     = (try? c.decode(Double.self, forKey: .micUnconfirmedPenalty))     ?? 0.5
