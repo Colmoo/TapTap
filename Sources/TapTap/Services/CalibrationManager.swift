@@ -3,7 +3,7 @@ import Observation
 
 /// Which side is currently being collected during side calibration.
 enum SideCalibrationSide: Equatable {
-    case left, right
+    case left, right, center
 }
 
 /// Phase of a guided calibration session.
@@ -88,24 +88,32 @@ final class CalibrationManager {
 
     // MARK: - Side calibration state (Step 10)
 
-    private static let sidePersistenceKey = "TapTap.sideCalibration.v2"
-    static let targetSideCount = 30  // taps per side
+    private static let sidePersistenceKey = "TapTap.sideCalibration.v3"
+    static let targetSideCount = 30  // taps per zone
 
     private(set) var sideCalibrationData: SideCalibrationData? = nil
     private(set) var sidePhase: SideCalibrationSide? = nil  // nil = not calibrating
-    private(set) var leftSideFeatures:  [[Double]] = []
-    private(set) var rightSideFeatures: [[Double]] = []
+    private(set) var leftSideFeatures:   [[Double]] = []
+    private(set) var rightSideFeatures:  [[Double]] = []
+    private(set) var centerSideFeatures: [[Double]] = []
 
     var isSideCalibrating: Bool { sidePhase != nil }
     var sideCalibrationProgress: Double {
         guard let phase = sidePhase else { return 0 }
+        let t = Double(Self.targetSideCount)
         switch phase {
-        case .left:  return Double(leftSideFeatures.count)  / Double(Self.targetSideCount) * 0.5
-        case .right: return 0.5 + Double(rightSideFeatures.count) / Double(Self.targetSideCount) * 0.5
+        case .left:   return Double(leftSideFeatures.count)   / t / 3.0
+        case .right:  return 1.0/3.0 + Double(rightSideFeatures.count)  / t / 3.0
+        case .center: return 2.0/3.0 + Double(centerSideFeatures.count) / t / 3.0
         }
     }
     var sideCalibrationCount: Int {
-        sidePhase == .left ? leftSideFeatures.count : rightSideFeatures.count
+        switch sidePhase {
+        case .left:   return leftSideFeatures.count
+        case .right:  return rightSideFeatures.count
+        case .center: return centerSideFeatures.count
+        case nil:     return 0
+        }
     }
 
     // MARK: - Init
@@ -227,9 +235,10 @@ final class CalibrationManager {
     // MARK: - Side calibration (Step 10)
 
     func startSideCalibration() {
-        leftSideFeatures  = []
-        rightSideFeatures = []
-        sidePhase         = .left
+        leftSideFeatures   = []
+        rightSideFeatures  = []
+        centerSideFeatures = []
+        sidePhase          = .left
     }
 
     /// Record a labelled feature vector during side calibration.
@@ -243,14 +252,18 @@ final class CalibrationManager {
             if leftSideFeatures.count >= Self.targetSideCount { sidePhase = .right }
         case .right:
             rightSideFeatures.append(fv)
-            if rightSideFeatures.count >= Self.targetSideCount { finalizeSideCalibration() }
+            if rightSideFeatures.count >= Self.targetSideCount { sidePhase = .center }
+        case .center:
+            centerSideFeatures.append(fv)
+            if centerSideFeatures.count >= Self.targetSideCount { finalizeSideCalibration() }
         }
     }
 
     func cancelSideCalibration() {
-        leftSideFeatures  = []
-        rightSideFeatures = []
-        sidePhase         = nil
+        leftSideFeatures   = []
+        rightSideFeatures  = []
+        centerSideFeatures = []
+        sidePhase          = nil
     }
 
     func resetSideCalibration() {
@@ -261,8 +274,9 @@ final class CalibrationManager {
 
     private func finalizeSideCalibration() {
         guard let data = SideCalibrationData.fit(
-            leftSamples: leftSideFeatures,
-            rightSamples: rightSideFeatures
+            leftSamples:   leftSideFeatures,
+            rightSamples:  rightSideFeatures,
+            centerSamples: centerSideFeatures
         ) else { return }
         sideCalibrationData = data
         sidePhase           = nil
