@@ -263,24 +263,24 @@ struct CalibrationView: View {
     private var sideCalibrationSection: some View {
         Section("Side Detection (IMU)") {
             if env.calibration.isSideCalibrating {
-                let isLeft = env.calibration.sidePhase == .left
-                phaseHeader(
-                    step: isLeft ? 1 : 2,
-                    title: isLeft ? "Tap LEFT side" : "Tap RIGHT side",
-                    subtitle: isLeft
-                        ? "Tap the left side of the lid \(CalibrationManager.targetSideCount) times."
-                        : "Tap the right side of the lid \(CalibrationManager.targetSideCount) times.",
-                    totalSteps: 2
-                )
+                let phase = env.calibration.sidePhase ?? .left
+                let step: Int   = phase == .left ? 1 : phase == .right ? 2 : 3
+                let title       = phase == .left ? "Tap LEFT zone"   : phase == .right ? "Tap RIGHT zone"   : "Tap CENTER zone"
+                let subtitle    = phase == .left
+                    ? "Spread \(CalibrationManager.targetSideCount) taps across the full left keyboard area."
+                    : phase == .right
+                        ? "Spread \(CalibrationManager.targetSideCount) taps across the full right keyboard area."
+                        : "Spread \(CalibrationManager.targetSideCount) taps across the trackpad and palm rest."
+                let label       = phase == .left ? "Left taps" : phase == .right ? "Right taps" : "Center taps"
+
+                phaseHeader(step: step, title: title, subtitle: subtitle, totalSteps: 3)
                 progressRow(
-                    label: isLeft ? "Left taps" : "Right taps",
-                    value: isLeft
-                        ? Double(env.calibration.sideCalibrationCount) / Double(CalibrationManager.targetSideCount)
-                        : Double(env.calibration.sideCalibrationCount) / Double(CalibrationManager.targetSideCount),
+                    label: label,
+                    value: Double(env.calibration.sideCalibrationCount) / Double(CalibrationManager.targetSideCount),
                     current: env.calibration.sideCalibrationCount,
                     target: CalibrationManager.targetSideCount
                 )
-                Text("Tap naturally. IMU must be active.")
+                Text("Tap naturally across the whole zone — not just the edges.")
                     .font(.caption).foregroundStyle(.secondary)
                 Button("Cancel", role: .cancel) {
                     env.calibration.cancelSideCalibration()
@@ -296,7 +296,7 @@ struct CalibrationView: View {
                     Text(data.calibratedAt, style: .date)
                         .foregroundStyle(.secondary)
                 }
-                Text("Enable \"IMU side detection\" in the Detection tab to use this model without the microphone.")
+                Text("Enable \"IMU side detection\" in the Detection tab to use this model.")
                     .font(.caption).foregroundStyle(.secondary)
                 HStack(spacing: 12) {
                     Button("Recalibrate Sides") {
@@ -309,7 +309,7 @@ struct CalibrationView: View {
                     }
                 }
             } else {
-                Text("Train a left/right classifier using the IMU's cross-axis correlations. Tap each side \(CalibrationManager.targetSideCount) times. No microphone required.")
+                Text("Train a 3-zone classifier (left keyboard / right keyboard / trackpad) using IMU cross-axis correlations. Tap each zone \(CalibrationManager.targetSideCount) times spread across the whole area.")
                     .font(.caption).foregroundStyle(.secondary)
                 Button("Start Side Calibration") {
                     env.calibration.startSideCalibration()
