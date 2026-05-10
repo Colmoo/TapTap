@@ -169,78 +169,84 @@ struct TapFeatureVector: Codable, Sendable {
 
 // MARK: - SideCalibrationData
 
-/// Diagonal-LDA classifier for left/right/center side detection via IMU features.
+/// 3-class nearest-centroid Mahalanobis classifier for IMU side detection.
 ///
-/// Fit by calling `fit(leftSamples:rightSamples:)` with ~30 labelled feature
-/// vectors per side.  `predictSide` returns `.center` when the tap lands near
-/// the decision boundary (within `ldaMargin` of `ldaThreshold`).
+/// Stores one calibrated mean vector per zone (left keyboard / right keyboard /
+/// trackpad+palm-rest) plus a shared pooled within-class variance vector.
+/// Prediction: zone with the smallest squared Mahalanobis distance wins.
+///
+/// This is equivalent to diagonal-covariance LDA classification — no matrix
+/// inversion required, just three dot products.
 struct SideCalibrationData: Codable, Sendable {
     let calibratedAt: Date
     let sampleCount: Int
-    /// LDA projection vector — one weight per feature (17 elements).
-    let ldaWeights: [Double]
-    /// Midpoint between the projected class means.
-    /// score > threshold + margin → .left
-    /// score < threshold - margin → .right
-    /// otherwise                 → .center
-    let ldaThreshold: Double
-    /// Half-width of the center zone (0.7 × within-class std on the LDA axis).
-    let ldaMargin: Double
+    /// Pooled within-class variance per feature (17 elements, shared across classes).
+    let pooledVar: [Double]
+    let meanLeft:   [Double]
+    let meanRight:  [Double]
+    let meanCenter: [Double]
 
     // MARK: - Prediction
 
     func predictSide(features: TapFeatureVector) -> TapSide {
         let fv = features.toArray()
-        guard fv.count == ldaWeights.count else { return .center }
-        let score = zip(fv, ldaWeights).reduce(0.0) { $0 + $1.0 * $1.1 }
-        if score > ldaThreshold + ldaMargin { return .left }
-        if score < ldaThreshold - ldaMargin { return .right }
+        guard fv.count == pooledVar.count else { return .center }
+        let dL = mahalanobisSq(fv, mean: meanLeft)
+        let dR = mahalanobisSq(fv, mean: meanRight)
+        let dC = mahalanobisSq(fv, mean: meanCenter)
+        if dL <= dR && dL <= dC { return .left }
+        if dR < dL  && dR <= dC { return .right }
         return .center
+    }
+
+    private func mahalanobisSq(_ x: [Double], mean: [Double]) -> Double {
+        var sum = 0.0
+        for i in 0..<x.count {
+            guard pooledVar[i] > 1e-9 else { continue }
+            let d = x[i] - mean[i]
+            sum += d * d / pooledVar[i]
+        }
+        return sum
     }
 
     // MARK: - Factory
 
-    static func fit(leftSamples: [[Double]], rightSamples: [[Double]]) -> SideCalibrationData? {
-        guard !leftSamples.isEmpty, !rightSamples.isEmpty,
+    static func fit(
+        leftSamples:   [[Double]],
+        rightSamples:  [[Double]],
+        centerSamples: [[Double]]
+    ) -> SideCalibrationData? {
+        guard !leftSamples.isEmpty, !rightSamples.isEmpty, !centerSamples.isEmpty,
               let dim = leftSamples.first?.count, dim > 0,
-              rightSamples.first?.count == dim else { return nil }
+              rightSamples.first?.count  == dim,
+              centerSamples.first?.count == dim
+        else { return nil }
 
         let nL = Double(leftSamples.count)
         let nR = Double(rightSamples.count)
+        let nC = Double(centerSamples.count)
 
-        // Per-class means
         var muL = [Double](repeating: 0, count: dim)
         var muR = [Double](repeating: 0, count: dim)
-        for s in leftSamples  { for i in 0..<dim { muL[i] += s[i] / nL } }
-        for s in rightSamples { for i in 0..<dim { muR[i] += s[i] / nR } }
+        var muC = [Double](repeating: 0, count: dim)
+        for s in leftSamples   { for i in 0..<dim { muL[i] += s[i] / nL } }
+        for s in rightSamples  { for i in 0..<dim { muR[i] += s[i] / nR } }
+        for s in centerSamples { for i in 0..<dim { muC[i] += s[i] / nC } }
 
-        // Pooled within-class variance per feature
-        let denom = max(nL + nR - 2, 1)
+        // Pooled within-class variance (denominator = N_total - 3 classes)
+        let denom = max(nL + nR + nC - 3, 1)
         var pooledVar = [Double](repeating: 0, count: dim)
-        for s in leftSamples  { for i in 0..<dim { pooledVar[i] += pow(s[i] - muL[i], 2) / denom } }
-        for s in rightSamples { for i in 0..<dim { pooledVar[i] += pow(s[i] - muR[i], 2) / denom } }
-
-        // LDA weight: between-class difference / pooled variance
-        let w = (0..<dim).map { i in (muL[i] - muR[i]) / max(pooledVar[i], 1e-9) }
-
-        // Projected class means → decision threshold at midpoint
-        let projL = zip(w, muL).reduce(0.0) { $0 + $1.0 * $1.1 }
-        let projR = zip(w, muR).reduce(0.0) { $0 + $1.0 * $1.1 }
-        let threshold = (projL + projR) / 2
-
-        // Within-class spread on the LDA axis → center margin
-        var ssW = 0.0
-        for s in leftSamples  { let p = zip(w, s).reduce(0.0) { $0 + $1.0 * $1.1 }; ssW += pow(p - projL, 2) }
-        for s in rightSamples { let p = zip(w, s).reduce(0.0) { $0 + $1.0 * $1.1 }; ssW += pow(p - projR, 2) }
-        let sigmaLDA = (ssW / denom).squareRoot()
-        let margin   = 0.7 * sigmaLDA
+        for s in leftSamples   { for i in 0..<dim { pooledVar[i] += pow(s[i] - muL[i], 2) / denom } }
+        for s in rightSamples  { for i in 0..<dim { pooledVar[i] += pow(s[i] - muR[i], 2) / denom } }
+        for s in centerSamples { for i in 0..<dim { pooledVar[i] += pow(s[i] - muC[i], 2) / denom } }
 
         return SideCalibrationData(
             calibratedAt: Date(),
-            sampleCount:  leftSamples.count + rightSamples.count,
-            ldaWeights:   w,
-            ldaThreshold: threshold,
-            ldaMargin:    margin
+            sampleCount:  leftSamples.count + rightSamples.count + centerSamples.count,
+            pooledVar:    pooledVar,
+            meanLeft:     muL,
+            meanRight:    muR,
+            meanCenter:   muC
         )
     }
 }
