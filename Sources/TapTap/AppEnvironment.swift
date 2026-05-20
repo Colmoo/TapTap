@@ -13,7 +13,6 @@ final class AppEnvironment {
     let calibration = CalibrationManager()
 
     private let input = TapInputService()
-    private let mic = MicInputService()
     private let classifier = GestureClassifier()
     private let executor = ActionExecutor()
 
@@ -32,14 +31,10 @@ final class AppEnvironment {
     private(set) var gestureDetectionCount: Int = 0
     private(set) var isAccelerometerAvailable: Bool = false
     private(set) var isGyroscopeAvailable: Bool = false
-    private(set) var isMicAvailable: Bool = false
     /// Most recent raw tap event from the IMU (updated even during calibration).
     private(set) var lastTapEvent: TapEvent? = nil
     /// ML match score for the most recent tap event (nil when ML is not active).
     private(set) var lastTapScore: Double? = nil
-    /// Peak amplitude of the most-recently detected acoustic transient (0–1).
-    /// Drives the live acoustic-activity pulse in DetectionView.
-    private(set) var lastAcousticPeak: Float = 0
 
     init() {
         applySettings()
@@ -57,14 +52,10 @@ final class AppEnvironment {
         if isListening {
             logger.log(String(format: "Listening started (threshold %.3f g)", store.settings.tapThresholdG), kind: .system)
         }
-        if store.settings.micEnabled {
-            mic.start()
-        }
     }
 
     func stopListening() {
         input.stop()
-        mic.stop()
         isListening = false
         logger.log("Listening stopped", kind: .system)
     }
@@ -114,13 +105,6 @@ final class AppEnvironment {
         input.movementGyroThresholdRadS  = s.movementGyroThresholdRadS
         input.gyroEnergyGateThreshold    = s.gyroEnergyGateThreshold
         input.peakValleyCheckEnabled     = s.peakValleyCheckEnabled
-        mic.thresholdMultiplier = s.micThresholdMultiplier
-        // Start or stop mic to match the toggled setting while listening.
-        if isListening {
-            if s.micEnabled && !mic.isRunning { mic.start() }
-            if !s.micEnabled && mic.isRunning { mic.stop() }
-        }
-
         // Apply launch at login setting
         do {
             let status = SMAppService.mainApp.status
@@ -240,51 +224,6 @@ final class AppEnvironment {
                 self.lastTapScore = nil
             }
 
-            // ── Mic confirmation gate ─────────────────────────────────────
-            // When micConfirmationEnabled is on, cross-check the IMU event
-            // against recent acoustic transients captured by MicInputService.
-            // A genuine tap produces both a mechanical shock (IMU) and an acoustic
-            // transient (mic) within a tight window (~10–20 ms). Events without
-            // an acoustic counterpart are downgraded by `micUnconfirmedPenalty`.
-            let s = self.store.settings
-            if s.micEnabled && s.micConfirmationEnabled {
-                let hasAcoustic = self.mic.transient(
-                    near: event.timestamp,
-                    windowSec: s.micCorrelationWindowSec
-                ) != nil
-
-                if !hasAcoustic {
-                    let penalty = s.micUnconfirmedPenalty
-
-                    if s.mlEnabled, let score = self.lastTapScore {
-                        // ML is active: apply the penalty to the current score and
-                        // re-check against the threshold.
-                        let penalised = score * penalty
-                        if self.store.settings.debugLoggingEnabled {
-                            self.logger.log(
-                                String(format: "Mic unconfirmed — score %.2f → %.2f (penalty %.1f×)",
-                                       score, penalised, penalty),
-                                kind: .system
-                            )
-                        }
-                        if penalised < self.store.settings.mlScoreThreshold {
-                            // Penalised score falls below ML floor — reject.
-                            return
-                        }
-                        self.lastTapScore = penalised
-                    } else {
-                        // ML is not active: use penalty as a hard gate probability.
-                        // penalty = 0.5 → 50 % of unconfirmed events are rejected.
-                        if Double.random(in: 0...1) > penalty {
-                            if self.store.settings.debugLoggingEnabled {
-                                self.logger.log("Mic unconfirmed tap rejected (no-ML gate)", kind: .system)
-                            }
-                            return
-                        }
-                    }
-                }
-            }
-
             // Tap accepted — forward to gesture classifier with side detection.
             let side: TapSide
             let settings = self.store.settings
@@ -342,15 +281,6 @@ final class AppEnvironment {
                     kind: .system
                 )
             }
-        }
-
-        mic.onAvailabilityChanged = { [weak self] available in
-            self?.isMicAvailable = available
-        }
-
-        // Update lastAcousticPeak so DetectionView can pulse the activity indicator.
-        mic.onAcousticTap = { [weak self] _, peak in
-            self?.lastAcousticPeak = peak
         }
 
         classifier.onGestureDetected = { [weak self] gesture in

@@ -21,10 +21,14 @@ struct LogEntry: Identifiable, Sendable {
     }
 
     var timeString: String {
+        Self.timeFormatter.string(from: timestamp)
+    }
+
+    private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "HH:mm:ss.SSS"
-        return f.string(from: timestamp)
-    }
+        return f
+    }()
 }
 
 @Observable

@@ -110,6 +110,7 @@ final class ActionExecutor {
 
     // nonisolated static so dlopen is called at most once per process.
     private static var mediaRemoteHandle: UnsafeMutableRawPointer? = nil
+    private static var skyLightHandle: UnsafeMutableRawPointer? = nil
 
     // MARK: - System actions
 
@@ -119,8 +120,9 @@ final class ActionExecutor {
         }
         switch cmd {
         case .lockScreen:
-            // ⌃⌘Q — lock screen shortcut
-            postKeyEvent(keyCode: 0x0C, flags: [.maskControl, .maskCommand])
+            try await runProcess("/usr/bin/osascript", arguments: [
+                "-e", "tell application \"System Events\" to keystroke \"q\" using {control down, command down}"
+            ])
 
         case .sleepDisplay:
             try await runProcess("/usr/bin/pmset", arguments: ["displaysleepnow"])
@@ -145,8 +147,9 @@ final class ActionExecutor {
             try await runProcess("/usr/sbin/screencapture", arguments: ["-x", path])
 
         case .screenshotRegion:
-            // ⇧⌘4 — system interactive screenshot selector
-            postKeyEvent(keyCode: 0x15, flags: [.maskShift, .maskCommand])
+            try await runProcess("/usr/bin/osascript", arguments: [
+                "-e", "tell application \"System Events\" to keystroke \"4\" using {shift down, command down}"
+            ])
 
         case .missionControl:
             try await runProcess("/usr/bin/open", arguments: ["-a", "Mission Control"])
@@ -166,16 +169,69 @@ final class ActionExecutor {
                 "tell application \"System Events\" to tell process \"ControlCenter\" to click menu bar item \"Focus\" of menu bar 1"
             ])
 
-        case .copy:            postKeyEvent(keyCode: 0x08, flags: .maskCommand)             // ⌘C
-        case .paste:           postKeyEvent(keyCode: 0x09, flags: .maskCommand)             // ⌘V
-        case .undo:            postKeyEvent(keyCode: 0x06, flags: .maskCommand)             // ⌘Z
+        case .copy:            postKeyEvent(keyCode: 0x08, flags: .maskCommand)               // ⌘C
+        case .paste:           postKeyEvent(keyCode: 0x09, flags: .maskCommand)               // ⌘V
+        case .undo:            postKeyEvent(keyCode: 0x06, flags: .maskCommand)               // ⌘Z
         case .redo:            postKeyEvent(keyCode: 0x06, flags: [.maskCommand, .maskShift]) // ⌘⇧Z
-        case .previousDesktop: postKeyEvent(keyCode: 0x7B, flags: .maskControl)             // ⌃←
-        case .nextDesktop:     postKeyEvent(keyCode: 0x7C, flags: .maskControl)             // ⌃→
-        case .spotlight:       postKeyEvent(keyCode: 0x31, flags: .maskCommand)             // ⌘Space
-        case .nextTab:         postKeyEvent(keyCode: 0x30, flags: .maskControl)             // ⌃⇥
+        case .previousDesktop: try await switchAdjacentSpace(direction: -1)
+        case .nextDesktop:     try await switchAdjacentSpace(direction: +1)
+        case .spotlight:       postKeyEvent(keyCode: 0x31, flags: .maskCommand)               // ⌘Space
+        case .nextTab:         postKeyEvent(keyCode: 0x30, flags: .maskControl)               // ⌃⇥
         case .previousTab:     postKeyEvent(keyCode: 0x30, flags: [.maskControl, .maskShift]) // ⌃⇧⇥
         }
+    }
+
+    // MARK: - Space switching (SkyLight private framework)
+
+    /// Switches to the adjacent space. Tries SkyLight direct manipulation first;
+    /// falls back to System Events AppleScript if SkyLight parsing fails.
+    /// `direction > 0` = next (right), `direction < 0` = previous (left).
+    private func switchAdjacentSpace(direction: Int) async throws {
+        if Self.skyLightHandle == nil {
+            Self.skyLightHandle = dlopen(
+                "/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight",
+                RTLD_NOW | RTLD_LOCAL
+            )
+        }
+
+        if let lib = Self.skyLightHandle,
+           let s1  = dlsym(lib, "CGSMainConnectionID"),
+           let s2  = dlsym(lib, "CGSCopyManagedDisplaySpaces"),
+           let s3  = dlsym(lib, "CGSManagedDisplaySetCurrentSpace") {
+
+            let cid = unsafeBitCast(s1, to: (@convention(c) () -> Int32).self)()
+            let cfArr = unsafeBitCast(s2, to: (@convention(c) (Int32) -> Unmanaged<CFArray>).self)(cid)
+                .takeRetainedValue()
+            let setSpace = unsafeBitCast(s3, to: (@convention(c) (Int32, CFString, UInt64) -> Void).self)
+
+            // CFArray → NSArray (toll-free bridge), then cast elements as NSDictionary.
+            let arr = cfArr as NSArray
+            if let main        = arr.firstObject as? NSDictionary,
+               let curInfo     = main["Current Space"] as? NSDictionary,
+               let curID       = (curInfo["id"] as? NSNumber)?.uint64Value,
+               let spacesArr   = main["Spaces"] as? NSArray,
+               let displayUUID = main["Display Identifier"] as? String {
+
+                let ids: [UInt64] = spacesArr
+                    .compactMap { ($0 as? NSDictionary)?["id"] as? NSNumber }
+                    .map { $0.uint64Value }
+
+                if let cur = ids.firstIndex(of: curID) {
+                    let target = direction > 0 ? min(cur + 1, ids.count - 1) : max(cur - 1, 0)
+                    if target != cur {
+                        setSpace(cid, displayUUID as CFString, ids[target])
+                    }
+                    return
+                }
+            }
+        }
+
+        // Fallback: System Events keystroke fires through the AX API and properly
+        // triggers Mission Control's space-switch hotkey unlike synthetic CGEvents.
+        let keyCode = direction > 0 ? "124" : "123"  // right / left arrow
+        try await runProcess("/usr/bin/osascript", arguments: [
+            "-e", "tell application \"System Events\" to key code \(keyCode) using {control down}"
+        ])
     }
 
     // MARK: - URL

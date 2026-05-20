@@ -79,9 +79,13 @@ struct TapWindow: Sendable {
 
         let halfN  = n / 2
         let binHz  = sampleRate / Double(n)
-        let lowEnd  = max(1, min(halfN, Int(20.0  / binHz)))
-        let midEnd  =        min(halfN, Int(80.0  / binHz))
-        let highEnd =        min(halfN, Int(200.0 / binHz))
+        // Band edges within the available Nyquist range (0 – sampleRate/2).
+        // At 200 Hz SR the Nyquist limit is 100 Hz, so all three bands are usable:
+        //   low  : ~0–20 Hz   (sub-tap rumble / DC drift)
+        //   mid  : ~20–80 Hz  (dominant tap energy)
+        //   high : ~80–100 Hz (sharp transient content)
+        let lowEnd  = max(1, min(halfN, Int(20.0 / binHz)))
+        let midEnd  =        min(halfN, Int(80.0 / binHz))
 
         var power = [Double](repeating: 0, count: halfN)
         for k in 0..<halfN {
@@ -95,9 +99,9 @@ struct TapWindow: Sendable {
             power[k] = re*re + im*im
         }
 
-        let low  = lowEnd  < midEnd  ? power[lowEnd..<midEnd].reduce(0, +)  : 0
-        let mid  = midEnd  < highEnd ? power[midEnd..<highEnd].reduce(0, +) : 0
-        let high = highEnd < halfN   ? power[highEnd..<halfN].reduce(0, +)  : 0
+        let low  = 1 < lowEnd  ? power[1..<lowEnd].reduce(0, +)  : 0   // ~0–20 Hz (skip DC bin 0)
+        let mid  = lowEnd < midEnd ? power[lowEnd..<midEnd].reduce(0, +) : 0  // ~20–80 Hz
+        let high = midEnd < halfN  ? power[midEnd..<halfN].reduce(0, +)  : 0  // ~80–100 Hz
         let total = low + mid + high + 1e-12
 
         return (low/total, mid/total, high/total)

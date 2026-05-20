@@ -1,16 +1,12 @@
 import Foundation
 
-/// Which side of the keyboard the tap came from (determined by mic TDOA).
 enum TapSide: String, Codable, Sendable {
     case left, center, right
 }
 
 enum GestureType: String, Codable, CaseIterable, Identifiable, Sendable {
-    // Mic-agnostic (used when mic is disabled, side = .center)
     case single, double, triple
-    // Left-side variants (mic required)
     case singleLeft, doubleLeft, tripleLeft
-    // Right-side variants (mic required)
     case singleRight, doubleRight, tripleRight
 
     var id: String { rawValue }
@@ -210,11 +206,6 @@ struct AppSettings: Codable, Sendable {
     var mlEnabled: Bool = true
     var mlScoreThreshold: Double = 0.25
     var movementGyroThresholdRadS: Double = 0.5
-    var micEnabled: Bool = false
-    var micThresholdMultiplier: Double = 6.0
-    var micConfirmationEnabled: Bool = false
-    var micCorrelationWindowSec: Double = 0.030
-    var micUnconfirmedPenalty: Double = 0.5
     var gyroEnergyGateThreshold: Double = 0.0
     var peakValleyCheckEnabled: Bool = false
     var imuSideEnabled: Bool = false
@@ -235,8 +226,6 @@ struct AppSettings: Codable, Sendable {
         case doubleTapWindowMs, tripleTapWindowMs, globalCooldownMs
         case tapThresholdG, tapPeakCooldownMs, launchAtLogin, debugLoggingEnabled
         case mlEnabled, mlScoreThreshold, movementGyroThresholdRadS
-        case micEnabled, micThresholdMultiplier
-        case micConfirmationEnabled, micCorrelationWindowSec, micUnconfirmedPenalty
         case gyroEnergyGateThreshold, peakValleyCheckEnabled, imuSideEnabled
         case sensitivityBias, noiseModelEnabled, userOverrodeMLThreshold, staLtaEnabled
     }
@@ -255,11 +244,6 @@ struct AppSettings: Codable, Sendable {
         mlEnabled                 = (try? c.decode(Bool.self,   forKey: .mlEnabled))                 ?? true
         mlScoreThreshold          = (try? c.decode(Double.self, forKey: .mlScoreThreshold))          ?? 0.25
         movementGyroThresholdRadS = (try? c.decode(Double.self, forKey: .movementGyroThresholdRadS)) ?? 0.5
-        micEnabled                = (try? c.decode(Bool.self,   forKey: .micEnabled))                ?? false
-        micThresholdMultiplier    = (try? c.decode(Double.self, forKey: .micThresholdMultiplier))    ?? 6.0
-        micConfirmationEnabled    = (try? c.decode(Bool.self,   forKey: .micConfirmationEnabled))    ?? false
-        micCorrelationWindowSec   = (try? c.decode(Double.self, forKey: .micCorrelationWindowSec))   ?? 0.030
-        micUnconfirmedPenalty     = (try? c.decode(Double.self, forKey: .micUnconfirmedPenalty))     ?? 0.5
         gyroEnergyGateThreshold   = (try? c.decode(Double.self, forKey: .gyroEnergyGateThreshold))  ?? 0.0
         peakValleyCheckEnabled    = (try? c.decode(Bool.self,   forKey: .peakValleyCheckEnabled))    ?? false
         imuSideEnabled            = (try? c.decode(Bool.self,   forKey: .imuSideEnabled))            ?? false

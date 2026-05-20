@@ -22,7 +22,7 @@ final class GestureClassifier {
     private var pendingItem: DispatchWorkItem?
     private var isCoolingDown = false
 
-    /// Register a tap with an optional side (from mic TDOA). Side is locked on the first tap
+    /// Register a tap with an optional side. Side is locked on the first tap
     /// of each sequence; subsequent taps in the same window keep the initial side.
     func registerTap(side: TapSide = .center) {
         guard !isCoolingDown else { return }

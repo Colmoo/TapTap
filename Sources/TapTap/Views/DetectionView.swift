@@ -4,8 +4,6 @@ struct DetectionView: View {
     @Environment(AppEnvironment.self) var env
     @State private var showGestureFlash = false
     @State private var lastGestureLabel = ""
-    /// 0–1 level shown by the acoustic activity bar; decays with animation.
-    @State private var acousticPulse: Double = 0
 
     private var noiseModelStatus: String {
         let m = env.noiseModel
@@ -51,29 +49,6 @@ struct DetectionView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                Toggle("Microphone side detection", isOn: Binding(
-                    get: { env.store.settings.micEnabled },
-                    set: { v in mutateSettings { $0.micEnabled = v } }
-                ))
-                if env.store.settings.micEnabled {
-                    LabeledContent("Microphone") {
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(env.isMicAvailable ? Color.green : Color.orange)
-                                .frame(width: 8, height: 8)
-                            Text(env.isMicAvailable ? "Active" : "Unavailable")
-                                .foregroundStyle(env.isMicAvailable ? .primary : .secondary)
-                            if env.isMicAvailable {
-                                AcousticActivityBar(level: acousticPulse)
-                                    .frame(width: 60, height: 8)
-                            }
-                        }
-                    }
-                }
-                Text("Uses the built-in stereo microphones to detect which side of the keyboard was tapped (left / centre / right), adding up to 9 bindable gestures.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
                 LabeledContent("ML filter") {
                     HStack(spacing: 6) {
                         let active = env.calibration.isCalibrated && env.store.settings.mlEnabled
@@ -85,61 +60,6 @@ struct DetectionView: View {
                     }
                 }
             }
-
-                if env.store.settings.micEnabled {
-                    Section("Microphone Sensitivity") {
-                        SliderRow(
-                            label: "Detection threshold",
-                            value: Binding(
-                                get: { env.store.settings.micThresholdMultiplier },
-                                set: { v in mutateSettings { $0.micThresholdMultiplier = v } }
-                            ),
-                            range: 2.0...20.0,
-                            format: "%.1f×"
-                        )
-                        Text("Peak amplitude must exceed noise floor × this multiplier. Lower = more sensitive but more false positives.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Section("Mic Confirmation (IMU accuracy)") {
-                        Toggle("Confirm taps with microphone", isOn: Binding(
-                            get: { env.store.settings.micConfirmationEnabled },
-                            set: { v in mutateSettings { $0.micConfirmationEnabled = v } }
-                        ))
-                        Text("Cross-checks each IMU tap event against a matching acoustic transient. Events with no mic counterpart are downgraded, letting you set a lower IMU threshold to catch lighter taps without more false positives.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        if env.store.settings.micConfirmationEnabled {
-                            SliderRow(
-                                label: "Correlation window",
-                                value: Binding(
-                                    get: { env.store.settings.micCorrelationWindowSec * 1000 },
-                                    set: { v in mutateSettings { $0.micCorrelationWindowSec = v / 1000 } }
-                                ),
-                                range: 5...80,
-                                format: "%.0f ms"
-                            )
-                            Text("How far apart the IMU and mic events can be and still count as the same knock. Genuine taps arrive within ~10–20 ms at both sensors.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-
-                            SliderRow(
-                                label: "Unconfirmed penalty",
-                                value: Binding(
-                                    get: { env.store.settings.micUnconfirmedPenalty },
-                                    set: { v in mutateSettings { $0.micUnconfirmedPenalty = v } }
-                                ),
-                                range: 0.0...1.0,
-                                format: "%.2f×"
-                            )
-                            Text("Score multiplier for IMU taps with no acoustic match. 0 = always reject; 1 = no penalty. Default 0.5 halves the ML score, vetoing borderline noise events while passing strong knocks.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
 
             Section("ML Filter") {
                 Toggle("ML filter", isOn: Binding(
@@ -270,15 +190,13 @@ struct DetectionView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    if !env.store.settings.micEnabled {
-                        Toggle("IMU side detection", isOn: Binding(
-                            get: { env.store.settings.imuSideEnabled },
-                            set: { v in mutateSettings { $0.imuSideEnabled = v } }
-                        ))
-                        Text("Classifies taps as left/centre/right using IMU features. Requires side calibration.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                    Toggle("IMU side detection", isOn: Binding(
+                        get: { env.store.settings.imuSideEnabled },
+                        set: { v in mutateSettings { $0.imuSideEnabled = v } }
+                    ))
+                    Text("Classifies taps as left/centre/right using IMU features. Requires side calibration.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
 
                     if let f = env.lastTapEvent?.features {
                         LabeledContent("Roll coupling") {
@@ -366,14 +284,6 @@ struct DetectionView: View {
                 withAnimation { showGestureFlash = false }
             }
         }
-        .onChange(of: env.lastAcousticPeak) { _, peak in
-            // Pulse the bar immediately to the new peak level, then let it
-            // decay back to zero over 400 ms so the waveform feel is natural.
-            acousticPulse = Double(min(peak * 4, 1))   // amplify for visual impact
-            withAnimation(.easeOut(duration: 0.4)) {
-                acousticPulse = 0
-            }
-        }
     }
 
     private func mutateSettings(_ transform: (inout AppSettings) -> Void) {
@@ -404,31 +314,3 @@ private struct SliderRow: View {
     }
 }
 
-/// A small horizontal bar that fills proportionally to `level` (0–1) and
-/// glows green, giving live visual feedback of acoustic transient strength.
-private struct AcousticActivityBar: View {
-    /// Current fill level in [0, 1].  Drive this from `env.lastAcousticPeak`
-    /// with an easeOut decay animation for a natural VU-meter feel.
-    var level: Double
-
-    var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                // Track
-                Capsule()
-                    .fill(Color.secondary.opacity(0.15))
-                // Fill
-                Capsule()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.green.opacity(0.7), Color.green],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .frame(width: geo.size.width * CGFloat(level))
-                    .shadow(color: .green.opacity(level > 0.05 ? 0.6 : 0), radius: 3)
-            }
-        }
-    }
-}

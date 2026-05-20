@@ -13,7 +13,7 @@ struct BindingsView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
 
-                if !(env.store.settings.micEnabled || env.store.settings.imuSideEnabled) {
+                if !env.store.settings.imuSideEnabled {
                     MicUpsellBanner()
                         .padding(.horizontal, 20)
                 }
@@ -35,7 +35,7 @@ struct KeyboardMapView: View {
     @Binding var editingGesture: GestureType?
 
     var sideEnabled: Bool {
-        env.store.settings.micEnabled || env.store.settings.imuSideEnabled
+        env.store.settings.imuSideEnabled
     }
 
     var body: some View {
@@ -45,7 +45,7 @@ struct KeyboardMapView: View {
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 if sideEnabled {
-                    Label("9 gestures", systemImage: env.store.settings.micEnabled ? "mic.fill" : "gyroscope")
+                    Label("9 gestures", systemImage: "gyroscope")
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(.green)
                         .padding(.horizontal, 8)
@@ -279,7 +279,7 @@ struct TapDots: View {
     }
 }
 
-// MARK: - Mic upsell banner
+// MARK: - Side detection upsell banner
 
 struct MicUpsellBanner: View {
     @Environment(AppEnvironment.self) var env
@@ -295,32 +295,21 @@ struct MicUpsellBanner: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Unlock Left & Right Zones")
                     .font(.subheadline.weight(.semibold))
-                Text("Enable mic detection or IMU side calibration (Detection tab) to get 9 gestures.")
+                Text("Enable IMU side calibration (Detection tab) to get 9 gestures.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
-            VStack(spacing: 6) {
-                Button("Enable Mic") {
-                    var s = env.store.settings
-                    s.micEnabled = true
-                    env.store.update(settings: s)
-                    env.applySettings()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-
-                Button("Enable IMU") {
-                    var s = env.store.settings
-                    s.imuSideEnabled = true
-                    env.store.update(settings: s)
-                    env.applySettings()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+            Button("Enable IMU") {
+                var s = env.store.settings
+                s.imuSideEnabled = true
+                env.store.update(settings: s)
+                env.applySettings()
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
         }
         .padding(14)
         .background(.blue.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))

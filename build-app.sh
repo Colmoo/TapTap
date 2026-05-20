@@ -19,6 +19,10 @@ mkdir -p "$MACOS" "$RESOURCES"
 cp "$BINARY" "$MACOS/TapTap"
 cp "Sources/TapTap/Info.plist" "$CONTENTS/Info.plist"
 
+# Ad-hoc sign so macOS treats this as a proper code-signed bundle.
+# This reduces how often the Accessibility permission becomes stale after rebuilds.
+codesign --force --deep --sign - "$APP"
+
 echo "Created $APP"
 echo ""
 echo "To run:  open TapTap.app"

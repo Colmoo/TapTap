@@ -16,29 +16,23 @@ struct PermissionsView: View {
             } header: {
                 Text("Required Permissions")
             } footer: {
-                Text("TapTap needs Accessibility access so it can listen for trackpad taps anywhere on screen. No keystrokes or personal data are recorded — only left-mouse-down events are observed.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("TapTap needs Accessibility access so it can listen for tap gestures anywhere on screen. No keystrokes or personal data are recorded.")
+                    if !env.permissions.accessibilityGranted {
+                        Text("If System Settings shows TapTap as enabled but it still appears denied here, toggle the switch off then back on, then click Refresh.")
+                            .foregroundStyle(.orange)
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
 
-            Section {
-                PermissionRow(
-                    title: "Microphone",
-                    description: "Required for acoustic tap side detection (left / centre / right). Only used when \"Microphone side detection\" is enabled in Detection settings.",
-                    granted: env.permissions.microphoneGranted,
-                    onRequest: { env.permissions.requestMicrophone() },
-                    onOpenSettings: { env.permissions.openMicrophoneSettings() }
-                )
-            } header: {
-                Text("Optional Permissions")
-            } footer: {
-                Text("Audio is processed entirely on-device; no audio is stored or transmitted.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
         }
         .formStyle(.grouped)
         .onAppear { env.permissions.refresh() }
+        .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
+            env.permissions.refresh()
+        }
         .toolbar {
             ToolbarItem {
                 Button("Refresh") { env.permissions.refresh() }

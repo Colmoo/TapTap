@@ -9,6 +9,8 @@ final class BindingStore {
 
     private let bindingsKey = "TapTap.bindings"
     private let settingsKey = "TapTap.settings"
+    // Use explicit suite so both the .app bundle and `swift run` (no bundle ID) read the same plist.
+    private let defaults = UserDefaults(suiteName: "com.colmo.TapTap") ?? .standard
 
     init() {
         load()
@@ -37,22 +39,22 @@ final class BindingStore {
     private func save() {
         let list = Array(bindings.values)
         if let data = try? JSONEncoder().encode(list) {
-            UserDefaults.standard.set(data, forKey: bindingsKey)
+            defaults.set(data, forKey: bindingsKey)
         }
         if let data = try? JSONEncoder().encode(settings) {
-            UserDefaults.standard.set(data, forKey: settingsKey)
+            defaults.set(data, forKey: settingsKey)
         }
     }
 
     private func load() {
-        if let data = UserDefaults.standard.data(forKey: bindingsKey),
+        if let data = defaults.data(forKey: bindingsKey),
            let list = try? JSONDecoder().decode([GestureBinding].self, from: data) {
             for b in list { bindings[b.gesture] = b }
         } else {
             for b in GestureBinding.defaults { bindings[b.gesture] = b }
         }
 
-        if let data = UserDefaults.standard.data(forKey: settingsKey),
+        if let data = defaults.data(forKey: settingsKey),
            let s = try? JSONDecoder().decode(AppSettings.self, from: data) {
             settings = s
         }

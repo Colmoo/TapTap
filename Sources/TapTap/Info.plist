@@ -22,7 +22,5 @@
     <string>NSApplication</string>
     <key>NSHighResolutionCapable</key>
     <true/>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>TapTap uses the built-in microphones to detect which side of the keyboard was tapped (left, centre, or right), enabling side-specific gesture bindings. Audio is processed entirely on-device and never stored or transmitted.</string>
 </dict>
 </plist>
