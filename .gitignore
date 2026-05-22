@@ -4,3 +4,6 @@
 *.o
 *.d
 TapTap.app
+CLAUDE.md
+.claude/
+graphify-out/
