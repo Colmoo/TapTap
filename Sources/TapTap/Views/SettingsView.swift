@@ -1,23 +1,51 @@
 import SwiftUI
 
+enum SettingsCategory: String, CaseIterable, Hashable {
+    case general, bindings, detection, calibration, permissions, debug
+
+    var title: String {
+        switch self {
+        case .general:     "General"
+        case .bindings:    "Bindings"
+        case .detection:   "Detection"
+        case .calibration: "Calibration"
+        case .permissions: "Permissions"
+        case .debug:       "Debug"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .general:     "gearshape"
+        case .bindings:    "hand.tap.fill"
+        case .detection:   "waveform"
+        case .calibration: "dial.medium"
+        case .permissions: "lock.shield"
+        case .debug:       "terminal"
+        }
+    }
+}
+
 struct SettingsView: View {
     @Environment(AppEnvironment.self) var env
+    @State private var selection: SettingsCategory? = .general
 
     var body: some View {
-        TabView {
-            GeneralView()
-                .tabItem { Label("General", systemImage: "gearshape") }
-            BindingsView()
-                .tabItem { Label("Bindings", systemImage: "hand.tap.fill") }
-            DetectionView()
-                .tabItem { Label("Detection", systemImage: "waveform") }
-            CalibrationView()
-                .tabItem { Label("Calibration", systemImage: "dial.medium") }
-            PermissionsView()
-                .tabItem { Label("Permissions", systemImage: "lock.shield") }
-            DebugLogView()
-                .tabItem { Label("Debug", systemImage: "terminal") }
+        NavigationSplitView {
+            List(SettingsCategory.allCases, id: \.self, selection: $selection) { category in
+                Label(category.title, systemImage: category.icon)
+            }
+            .navigationSplitViewColumnWidth(min: 160, ideal: 190)
+        } detail: {
+            switch selection ?? .general {
+            case .general:     GeneralView()
+            case .bindings:    BindingsView()
+            case .detection:   DetectionView()
+            case .calibration: CalibrationView()
+            case .permissions: PermissionsView()
+            case .debug:       DebugLogView()
+            }
         }
-        .frame(width: 620, height: 500)
+        .frame(minWidth: 740, minHeight: 460)
     }
 }

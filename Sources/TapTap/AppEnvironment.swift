@@ -272,6 +272,14 @@ final class AppEnvironment {
             self.logger.log("Tap filtered: \(reason)", kind: .system)
         }
 
+        input.onDiagnosticSample = { [weak self] magnitude, threshold in
+            guard let self, self.store.settings.debugLoggingEnabled else { return }
+            self.logger.log(
+                String(format: "IMU: %.3fg (thresh %.3fg)", magnitude, threshold),
+                kind: .system
+            )
+        }
+
         input.onAvailabilityChanged = { [weak self] available in
             guard let self else { return }
             self.isAccelerometerAvailable = available

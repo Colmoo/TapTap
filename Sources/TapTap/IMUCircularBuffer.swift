@@ -28,7 +28,7 @@ final class IMUCircularBuffer {
     /// Extracts samples in the absolute index range [startIdx, startIdx+count).
     /// Returns fewer items if the range falls outside available history.
     func slice(from startIdx: Int, count n: Int) -> [IMUSample] {
-        let first = max(startIdx, writeCount - capacity)
+        let first = max(startIdx, max(0, writeCount - capacity))
         let last  = min(startIdx + n, writeCount)
         guard first < last else { return [] }
         var out = [IMUSample]()

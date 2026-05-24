@@ -13,6 +13,7 @@ struct CalibrationView: View {
             sideCalibrationSection
         }
         .formStyle(.grouped)
+        .navigationTitle("Calibration")
     }
 
     // MARK: - Status

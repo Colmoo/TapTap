@@ -59,6 +59,7 @@ struct GeneralView: View {
             }
         }
         .formStyle(.grouped)
+        .navigationTitle("General")
         .onAppear {
             loginItemStatus = SMAppService.mainApp.status
             // Sync stored setting to real system status

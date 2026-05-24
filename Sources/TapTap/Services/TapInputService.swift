@@ -284,7 +284,7 @@ final class TapInputService {
             guard !staSamples.isEmpty, ltaSamples.count >= ltaCount / 2 else { return 0.0 }
             let staMean = staSamples.map { $0.dax*$0.dax + $0.day*$0.day + $0.daz*$0.daz }.reduce(0, +) / Double(staSamples.count)
             let ltaMean = ltaSamples.map { $0.dax*$0.dax + $0.day*$0.day + $0.daz*$0.daz }.reduce(0, +) / Double(ltaSamples.count)
-            guard ltaMean > 1e-12 else { return 0.0 }
+            guard ltaMean > 1e-12 else { return staMean > 1e-12 ? 1.0 : 0.0 }
             return min(1.0, max(0.0, (staMean / ltaMean - 1.0) / 9.0))
         }()
 

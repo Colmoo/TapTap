@@ -276,6 +276,7 @@ struct DetectionView: View {
             }
         }
         .formStyle(.grouped)
+        .navigationTitle("Detection")
         .onChange(of: env.gestureDetectionCount) { _, _ in
             guard let gesture = env.lastGesture else { return }
             lastGestureLabel = gesture.displayName

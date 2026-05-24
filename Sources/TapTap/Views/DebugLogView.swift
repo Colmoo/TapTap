@@ -4,19 +4,7 @@ struct DebugLogView: View {
     @Environment(AppEnvironment.self) var env
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("Event Log")
-                    .font(.headline)
-                Spacer()
-                Button("Clear") { env.logger.clear() }
-                    .buttonStyle(.borderless)
-            }
-            .padding([.horizontal, .top])
-            .padding(.bottom, 8)
-
-            Divider()
-
+        Group {
             if env.logger.entries.isEmpty {
                 ContentUnavailableView(
                     "No events yet",
@@ -41,6 +29,13 @@ struct DebugLogView: View {
                     .listRowBackground(Color.clear)
                 }
                 .listStyle(.plain)
+            }
+        }
+        .navigationTitle("Debug")
+        .toolbar {
+            ToolbarItem {
+                Button("Clear") { env.logger.clear() }
+                    .disabled(env.logger.entries.isEmpty)
             }
         }
     }

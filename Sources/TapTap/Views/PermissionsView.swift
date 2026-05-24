@@ -29,6 +29,7 @@ struct PermissionsView: View {
 
         }
         .formStyle(.grouped)
+        .navigationTitle("Permissions")
         .onAppear { env.permissions.refresh() }
         .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
             env.permissions.refresh()

@@ -21,6 +21,7 @@ struct BindingsView: View {
                 Spacer(minLength: 16)
             }
         }
+        .navigationTitle("Bindings")
         .sheet(item: $editingGesture) { gesture in
             BindingEditorSheet(gesture: gesture)
                 .environment(env)
