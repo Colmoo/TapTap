@@ -24,11 +24,11 @@ button{font-family:inherit;cursor:pointer}
 .num{font-family:var(--num);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"lnum" 1}
 
 /* App grid */
-.app{position:relative;z-index:1;height:100vh;display:grid;grid-template-columns:232px 1fr;grid-template-rows:64px 20px 1fr 76px}
+.app{position:relative;z-index:1;height:100vh;display:grid;grid-template-columns:208px 1fr;grid-template-rows:64px 20px 1fr 76px}
 
 /* Header */
-.header{grid-column:1/-1;display:grid;grid-template-columns:232px 1fr auto;align-items:center;background:#fff;border-bottom:1px solid var(--border);padding-right:28px}
-.brand{display:flex;align-items:baseline;gap:12px;padding-left:28px}
+.header{grid-column:1/-1;display:grid;grid-template-columns:1fr auto;align-items:center;background:#fff;border-bottom:1px solid var(--border);padding-right:28px}
+.brand{display:flex;align-items:baseline;gap:12px;padding-left:24px}
 .wordmark{font-weight:700;letter-spacing:.32em;color:var(--navy);font-size:20px}
 .brand-sub{color:var(--sky);font-size:13px;font-weight:500;letter-spacing:.02em;white-space:nowrap}
 .proj{display:flex;align-items:center;gap:14px;justify-content:center;min-width:0}
@@ -55,20 +55,21 @@ button{font-family:inherit;cursor:pointer}
 
 /* Sidebar */
 .side{background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0 20px;min-height:0}
-.nav-lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:0 28px 10px}
-.nav a{display:flex;align-items:center;gap:12px;padding:11px 28px;color:var(--text);text-decoration:none;font-size:14.5px;border-left:3px solid transparent;cursor:pointer}
+.nav-lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:0 22px 10px}
+.nav a{display:flex;align-items:center;gap:12px;padding:11px 22px;color:var(--text);text-decoration:none;font-size:14.5px;border-left:3px solid transparent;cursor:pointer}
 .nav a svg{width:18px;height:18px;stroke:var(--muted);flex:none}
 .nav a:hover{background:#F7F9FB}
 .nav a.active{background:var(--sky-t);border-left-color:var(--sky);color:var(--navy);font-weight:500}
 .nav a.active svg{stroke:var(--navy)}
 .nav .badge{margin-left:auto;background:var(--lo);color:#fff;font-size:11px;font-weight:600;min-width:20px;height:20px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
-.side-foot{margin-top:auto;padding:0 28px;font-size:12px;color:var(--muted)}
+.side-foot{margin-top:auto;padding:0 22px;font-size:12px;color:var(--muted)}
 .side-foot .row{padding:10px 0;border-top:1px solid var(--line)}
+.side-export{width:100%;justify-content:center;margin-bottom:16px}
 .side-foot .k{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
 .side-foot .v{color:var(--text);font-size:12.5px;word-break:break-word}
 
 /* Main */
-.main{overflow:auto;padding:20px 40px 24px;min-width:0}
+.main{overflow:auto;padding:20px 32px 24px;min-width:0}
 .page{display:none;animation:fade .25s ease}
 .page.active{display:block}
 @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
@@ -90,6 +91,7 @@ h1{font-size:40px;font-weight:400;color:var(--navy);margin:0;line-height:1.1;let
 .kpi{padding:16px 24px;position:relative}
 .kpi .lbl{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .kpi .big{font-size:34px;font-weight:600;color:var(--navy);line-height:1.15;margin:6px 0 4px;letter-spacing:-.01em}
+.kpi .big.range{font-size:28px;white-space:nowrap}
 .kpi .big small{font-size:18px;font-weight:500;color:var(--muted);margin-left:4px}
 .kpi .meta{font-size:13px;color:var(--muted)}
 .kpi .meta b{color:var(--text);font-weight:500}
@@ -121,9 +123,11 @@ h1{font-size:40px;font-weight:400;color:var(--navy);margin:0;line-height:1.1;let
 .bd-list .pct{text-align:right;color:var(--muted);font-size:13px}
 .bd-list li.tot{border-top:1px solid var(--border);font-weight:600;color:var(--navy);padding-top:10px}
 
-.env-m{padding:10px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:2px 16px;align-items:baseline}
+.env-m{padding:18px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:2px 16px;align-items:baseline}
+.env-m:last-child{border-bottom:0}
+.pct-s{font-size:14px;font-weight:600;color:var(--sky);background:var(--sky-t);padding:2px 7px;border-radius:3px;margin-left:6px;vertical-align:3px}
 .env-m:first-child{padding-top:0}
-.env-m .k{font-size:13px;color:var(--muted)}
+.env-m .k{font-size:14px;color:var(--muted)}
 .env-m .v{font-size:22px;font-weight:600;color:var(--navy);text-align:right;white-space:nowrap}
 .env-m .d{grid-column:1/-1;font-size:12.5px;color:var(--muted)}
 .env-flag{display:flex;gap:12px;align-items:flex-start;padding:12px 0 4px}
@@ -168,8 +172,8 @@ table.ct{width:100%;border-collapse:collapse;min-width:1040px;table-layout:fixed
 .conf.high{color:var(--hi);background:var(--hi-t)}
 .conf.medium{color:#A87412;background:var(--md-t)}
 .conf.low{color:var(--lo);background:var(--lo-t)}
-.srcs{display:flex;flex-wrap:wrap;gap:4px 6px;max-width:100%}
-.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:#fff;border-radius:3px;padding:3px 7px 3px 3px;font-size:12px;color:var(--text);white-space:nowrap;transition:border-color .15s,background .15s}
+.srcs{display:flex;flex-wrap:wrap;gap:4px;max-width:100%}
+.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:#fff;border-radius:3px;padding:3px 6px 3px 3px;font-size:12px;color:var(--text);white-space:nowrap;transition:border-color .15s,background .15s}
 .chip:hover{border-color:var(--sky);background:var(--sky-t)}
 .chip.on{border-color:var(--navy);background:var(--sky-t)}
 .ft{display:inline-flex;align-items:center;justify-content:center;font-family:var(--num);font-size:9.5px;font-weight:700;letter-spacing:.04em;border-radius:2px;padding:0 4px;height:16px;min-width:27px}
@@ -213,7 +217,8 @@ tr.total td.price{font-size:17px}
 
 /* Issues */
 .sumbar{display:flex;align-items:center;gap:24px;padding:12px 24px;margin-bottom:12px}
-.sumbar .main-t{font-size:15px;font-weight:500;color:var(--navy)}
+.sumbar .main-t{font-size:15px;font-weight:500;color:var(--navy);line-height:1.6}
+.sumbar .main-t .st-l:first-child{font-size:16px}
 .sumbar .main-t b{font-weight:600}
 .sumbar .imp{font-family:var(--num);font-weight:700}
 .sumbar .neg{color:var(--hi)}
@@ -221,11 +226,11 @@ tr.total td.price{font-size:17px}
 .sumbar .counts{margin-left:auto;display:flex;gap:16px;font-size:13px;color:var(--muted)}
 .sumbar .counts span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:currentColor;vertical-align:0}
 .iss-list{display:flex;flex-direction:column;gap:8px}
-.iss{display:grid;grid-template-columns:minmax(0,1.35fr) 160px minmax(0,1.3fr) 150px;gap:24px;align-items:center;padding:12px 20px 12px 22px;border-left:3px solid var(--border);transition:opacity .3s}
+.iss{display:grid;grid-template-columns:minmax(0,1fr) 240px 170px;gap:32px;align-items:center;padding:10px 24px 10px 22px;border-left:3px solid var(--border);transition:opacity .3s}
 .iss.sev-high{border-left-color:var(--lo)}
 .iss.sev-medium{border-left-color:var(--md)}
 .iss.sev-low{border-left-color:#9AA6B6}
-.tags{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
+.tags{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;align-items:center}
 .tag{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:2px;display:inline-flex;align-items:center;gap:5px}
 .tag.sev-high{background:var(--lo-t);color:var(--lo)}
 .tag.sev-medium{background:var(--md-t);color:#A87412}
@@ -233,6 +238,8 @@ tr.total td.price{font-size:17px}
 .tag.type{background:#fff;border:1px solid var(--border);color:var(--muted)}
 .tag.flag{background:#fff;border:1px solid #E8B7AB;color:var(--lo)}
 .tag svg{width:11px;height:11px}
+.iss-src{margin-bottom:4px}
+.iss .chip .ft{background:#ECEFF3;color:#56657A}
 .iss .ttl{font-size:15px;font-weight:500;color:var(--text);line-height:1.35}
 .eff .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .eff .v{font-family:var(--num);font-size:17px;font-weight:700;color:var(--text);line-height:1.3}
@@ -280,21 +287,22 @@ table.ft-t{width:100%;border-collapse:collapse}
 .rel.Medium{background:#D7EAF7;color:#1F6A9C}
 .rel.Low{background:#EEF1F5;color:#56657A}
 .rel.Not{background:#fff;color:#8A96A7;border:1px dashed #C4CDD8}
-.bs{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13.5px}
-.bs span::before,.bl li::before{content:"\\";color:var(--sky);font-weight:600;margin-right:6px}
+.bs{display:flex;flex-wrap:wrap;gap:4px 0;font-size:13.5px}
+.bs span+span::before{content:"||";color:var(--sky);font-weight:600;margin:0 14px;letter-spacing:-.5px}
+.bl li::before{content:"\\";color:var(--sky);font-weight:600;margin-right:6px}
 .used{font-family:var(--num);font-weight:600;color:var(--navy);white-space:nowrap}
 .frow.dim .fname,.frow.dim .bs{color:var(--muted)}
 
 /* Bottom bar */
 .bbar{grid-column:1/-1;background:#fff;border-top:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 28px;z-index:5}
-.cbox{flex:1;display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:3px;padding:0 14px;height:44px;background:#FAFBFC;max-width:900px}
-.cbox:focus-within{border-color:var(--sky);background:#fff}
-.cbox svg{width:18px;height:18px;stroke:var(--sky);flex:none}
-.cbox input{flex:1;border:0;background:transparent;font:inherit;font-size:14px;color:var(--text);outline:none;min-width:0}
-.cbox input::placeholder{color:#97A3B4}
+.cbox{flex:1;display:flex;align-items:center;gap:12px;border:1.5px solid var(--sky);border-radius:3px;padding:0 16px;height:48px;background:#E6F1FA}
+.cbox:focus-within{border-color:var(--navy);background:#fff;box-shadow:0 0 0 3px rgba(77,163,219,.2)}
+.cbox svg{width:20px;height:20px;stroke:var(--navy);flex:none}
+.cbox input{flex:1;border:0;background:transparent;font:inherit;font-size:14.5px;color:var(--text);outline:none;min-width:0}
+.cbox input::placeholder{color:#4F6788}
 .bbar .spacer{flex:1}
 .bbar .hint{font-size:12px;color:var(--muted);white-space:nowrap}
-.bbar .btn{height:44px}
+.bbar .btn{height:48px;padding-left:22px;padding-right:22px}
 
 /* Drawer */
 .scrim{position:fixed;inset:0;background:rgba(20,36,62,.28);opacity:0;pointer-events:none;transition:opacity .25s;z-index:20}
@@ -356,13 +364,13 @@ table.ft-t{width:100%;border-collapse:collapse}
 
 @media (max-width:1360px){
   .app{grid-template-columns:208px 1fr}
-  .header{grid-template-columns:208px 1fr auto}
+  .header{grid-template-columns:1fr auto}
   .brand{padding-left:24px}
   .nav a{padding:11px 22px}
   .nav-lbl,.side-foot{padding-left:22px;padding-right:22px}
   .main{padding:24px 28px 28px}
   .kpi .big{font-size:32px}
-  .iss{grid-template-columns:minmax(0,1.4fr) 150px minmax(0,1.2fr) 156px;gap:18px}
+  .iss{grid-template-columns:minmax(0,1fr) 200px 160px;gap:24px}
   .bbar .hint{display:none}
 }
 </style>
@@ -373,13 +381,8 @@ table.ft-t{width:100%;border-collapse:collapse}
   <!-- Header -->
   <header class="header">
     <div class="brand"><span class="wordmark">MARU</span><span class="brand-sub">Quote Assistant</span></div>
-    <div class="proj">
-      <span class="proj-name">Akkasæter, steel hall — DS Nor</span>
-      <span class="chip-ver" id="verChip"><span class="dot"></span><span id="verText">Draft v2 · edited by estimator</span></span>
-    </div>
     <div class="hdr-right">
       <div class="lang">ET<span>|</span><b>EN</b></div>
-      <button class="burger" aria-label="Menu"><i></i><i></i><i></i></button>
     </div>
   </header>
   <div class="band" aria-hidden="true"></div>
@@ -394,7 +397,8 @@ table.ft-t{width:100%;border-collapse:collapse}
       <a data-page="files"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M3.5 6.5h6l2 2h9v10h-17z"/></svg>Project files</a>
     </nav>
     <div class="side-foot">
-      <div class="row"><span class="k">Rate file</span><span class="v">Maru_rate_file_2026.xlsx</span></div>
+      <button class="btn sec side-export" id="exportBtn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M12 4v11M7 10l5 5 5-5M5 19h14"/></svg>Export PDF</button>
+      <div class="row"><span class="k">Report version</span><span class="v" id="verText">Draft v2</span></div>
       <div class="row"><span class="k">Last AI run</span><span class="v" id="lastRun">Today 14:32 · 6 files</span></div>
       <div class="row"><span class="k">Bid deadline</span><span class="v">23 Oct 2026 · 14 days left</span></div>
     </div>
@@ -414,38 +418,37 @@ table.ft-t{width:100%;border-collapse:collapse}
         <div class="card kpi primary">
           <div class="lbl">Total price</div>
           <span class="perkg num" id="kPerKg">≈ €2.25/kg</span>
-          <div class="big num" id="kTotal">€333,000</div>
-          <div class="meta">Range <b class="num" id="kRange">€315,000 – €352,000</b></div>
+          <div class="big num range" id="kTotal">€315,000 – €352,000</div>
+          <div class="meta">Estimated range</div>
         </div>
         <div class="card kpi">
           <div class="lbl">Labour</div>
           <div class="big num" id="kLabour">2,100<small>h</small></div>
-          <div class="meta"><b class="num" id="kHpt">14.2 h/t</b> · fabrication in Ardu</div>
+          <div class="meta"><b class="num" id="kHpt">14.2 h/t</b></div>
         </div>
         <div class="card kpi">
           <div class="lbl">Overall confidence</div>
           <div class="big conf-word">Medium</div>
           <div class="meter"><i class="on"></i><i class="on"></i><i></i></div>
-          <div class="meta">3 high · 3 medium · 1 low lines</div>
         </div>
         <div class="card kpi">
           <div class="lbl">Open issues</div>
           <div class="big red num" id="kIssues">5</div>
-          <div class="meta">1 high impact · <a data-goto="issues">Review issues</a></div>
+          <div class="meta">1 high impact</div>
         </div>
       </div>
 
       <div class="ov-grid">
         <div class="card">
-          <div class="card-h"><h3>Project summary</h3><span class="sub">From RFQ form</span></div>
+          <div class="card-h"><h3>Project summary</h3></div>
           <div class="card-b" style="padding-top:6px;padding-bottom:6px">
             <dl class="dl">
               <dt>Client</dt><dd>DS Nor</dd>
               <dt>Project</dt><dd>Akkasæter steel hall, Norway</dd>
               <dt>Type</dt><dd>Steel frame with platforms</dd>
-              <dt>Execution class</dt><dd><span class="pill">EXC2</span></dd>
               <dt>Net steel</dt><dd class="num">148 t</dd>
-              <dt>Input level</dt><dd>Full project<span style="display:block;font-weight:400;color:var(--muted);font-size:12px;white-space:nowrap">IFC + material lists + RFQ form</span></dd>
+              <dt>Project level</dt><dd>Full project</dd>
+              <dt>Sources</dt><dd>IFC + material lists + RFQ form</dd>
               <dt>Delivery</dt><dd>DAP site, Norway</dd>
               <dt>Bid deadline</dt><dd class="num">23 Oct 2026</dd>
             </dl>
@@ -453,7 +456,7 @@ table.ft-t{width:100%;border-collapse:collapse}
         </div>
 
         <div class="card">
-          <div class="card-h"><h3>Cost breakdown</h3><a class="link" data-goto="costs">All cost lines</a></div>
+          <div class="card-h"><h3>Cost breakdown</h3></div>
           <div class="card-b">
             <div class="stack" id="stack"></div>
             <ul class="bd-list" id="bdList"></ul>
@@ -463,14 +466,9 @@ table.ft-t{width:100%;border-collapse:collapse}
         <div class="card">
           <div class="card-h"><h3><svg class="leaf" viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M5 19c0-8 5-14 15-14 0 10-6 15-14 15"/><path d="M5 19 13 11"/></svg>Environmental impact</h3></div>
           <div class="card-b">
-            <div class="env-m"><span class="k">Steel bought</span><span class="v num">158.4 t</span><span class="d">148 t net + 10.4 t offcuts (7%)</span></div>
-            <div class="env-m"><span class="k">Carbon footprint</span><span class="v num">≈ 150 t CO<sub style="font-size:.6em">2</sub>e</span><span class="d">≈ 1.0 t CO<sub>2</sub>e per t steel</span></div>
-            <div class="env-flag">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#C8553D" stroke-width="1.8"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>
-              <div><div class="k" style="font-size:13px;color:var(--muted)">EU norms check</div><div class="t">No EN 15804 EPD for paint system</div><a class="link" data-goto="issues">See open issues</a></div>
-              <span class="v num">1 flag</span>
-            </div>
-            <div class="note">Indicative factors, to be replaced by supplier EPDs.</div>
+            <div class="env-m"><span class="k">Steel bought</span><span class="v num">158.4 t</span></div>
+            <div class="env-m"><span class="k">Offcuts</span><span class="v num">10.4 t <span class="pct-s">7%</span></span></div>
+            <div class="env-m"><span class="k">Carbon footprint</span><span class="v num">≈ 150 t CO<sub style="font-size:.6em">2</sub>e</span></div>
           </div>
         </div>
       </div>
@@ -480,11 +478,10 @@ table.ft-t{width:100%;border-collapse:collapse}
     <section class="page" id="page-costs">
       <div class="phead">
         <div><div class="eyebrow">Quote report</div><h1>Cost lines</h1></div>
-        <div class="pmeta">Rule engine · rates from <b>Maru_rate_file_2026.xlsx</b> · EUR, excl. VAT<br><span class="lg-edit"></span><span id="editCount">1 line edited by estimator</span> · click a quantity or rate to edit · <a class="link" id="resetBtn">Reset to AI values</a></div>
       </div>
       <div class="card tbl-wrap">
         <table class="ct">
-          <colgroup><col style="width:44px"><col style="width:29.5%"><col style="width:9.5%"><col style="width:10.5%"><col style="width:7%"><col style="width:8.5%"><col style="width:9%"><col style="width:26%"><col style="width:44px"></colgroup>
+          <colgroup><col style="width:44px"><col style="width:26.5%"><col style="width:9.5%"><col style="width:11%"><col style="width:7.5%"><col style="width:10%"><col style="width:11%"><col style="width:24.5%"><col style="width:44px"></colgroup>
           <thead><tr>
             <th>#</th><th>Cost line</th><th class="r">Quantity</th><th class="r">Unit rate</th><th class="r">Labour&nbsp;h</th><th class="r" style="white-space:normal;line-height:1.3">Estimated<br>price (€)</th><th>Confidence</th><th>Source</th><th></th>
           </tr></thead>
@@ -497,7 +494,6 @@ table.ft-t{width:100%;border-collapse:collapse}
     <section class="page" id="page-issues">
       <div class="phead">
         <div><div class="eyebrow">Quote report</div><h1>Open issues</h1></div>
-        <div class="pmeta">Missing, incomplete or unclear information<br>found while analysing <b>6 relevant files</b></div>
       </div>
       <div class="card sumbar">
         <div class="main-t" id="sumText"></div>
@@ -510,7 +506,7 @@ table.ft-t{width:100%;border-collapse:collapse}
     <section class="page" id="page-files">
       <div class="phead">
         <div><div class="eyebrow">Quote report</div><h1>Project files</h1></div>
-        <div class="pmeta">Read from Maru's shared drive<br>Click a file to see what was extracted</div>
+        <div class="pmeta">Read from Maru's shared drive</div>
       </div>
       <div class="f-head">
         <div class="path"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M3.5 6.5h6l2 2h9v10h-17z"/></svg>\\maru-fs01\Projects\2026\<b>DSNor_Akkasaeter</b></div>
@@ -519,7 +515,7 @@ table.ft-t{width:100%;border-collapse:collapse}
       <div class="card">
         <div class="scan"><span><b>10 files found</b> · 6 used for this quote · last scan: today 14:32</span><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="m5 12 4.5 4.5L19 7"/></svg>All files mapped</span></div>
         <table class="ft-t">
-          <thead><tr><th style="width:30%">File</th><th>Type</th><th>Relevance</th><th>What the AI extracted</th><th>Used in cost lines</th></tr></thead>
+          <thead><tr><th style="width:30%">File</th><th>Type</th><th>Relevance</th><th>What the AI extracted</th></tr></thead>
           <tbody id="ftBody"></tbody>
         </table>
       </div>
@@ -532,9 +528,6 @@ table.ft-t{width:100%;border-collapse:collapse}
       <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M4 5h16v11H9l-5 4z"/></svg>
       <input id="globalComment" placeholder="Write a comment to the AI, e.g. 'Client confirmed galvanising instead of paint'">
     </div>
-    <span class="spacer"></span>
-    <span class="hint" id="pendingHint">1 edit · 0 comments pending</span>
-    <button class="btn sec" id="exportBtn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M12 4v11M7 10l5 5 5-5M5 19h14"/></svg>Export PDF</button>
     <button class="btn" id="sendBtn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M4 12h14M13 6l6 6-6 6"/></svg>Send back to AI</button>
   </footer>
 </div>
@@ -671,10 +664,10 @@ const LINES = [
   {id:4,name:'Fasteners',desc:'Not in model, estimated at 1% of steel weight',qty:1.5,qu:'t',rate:6.5,rp:'€',rs:'/kg',f:1000,price:9750,conf:'low',src:[['ruleassume','RULE · Assumption']]},
   {id:5,name:'Workshop drawings',desc:'Modelling and shop drawings',qty:148,qu:'t',rate:52,rp:'€',rs:'/t',f:1,price:7700,conf:'high',src:[['rfq','XLSX · RFQ form']]},
   {id:6,name:'Packaging',desc:'Standard packing',qty:148,qu:'t',rate:30,rp:'€',rs:'/t',f:1,price:4440,conf:'high',src:[['rulerate','RULE · Maru rate file']]},
-  {id:7,name:'Transport to site',desc:'7 standard trucks, Estonia → Norway',qty:7,qu:'trucks',rate:2600,rp:'€',rs:'/truck',f:1,price:18200,conf:'medium',src:[['eml','EML · client email']],pre:{qty:'8 trucks'}},
+  {id:7,name:'Transport to site',desc:'7 standard trucks, Estonia → Norway',qty:7,qu:'trucks',rate:2600,rp:'€',rs:'/truck',f:1,price:18200,conf:'medium',src:[['eml','EML · client email']]},
   {id:8,name:'Margin',desc:'1.05, competitive bid',margin:true,price:15260,src:[['rulerate','RULE · Maru rate file']]}
 ];
-LINES.forEach(l => { l.orig = {qty:l.qty, rate:l.rate, price:l.price}; l.edited = {qty:!!(l.pre&&l.pre.qty), rate:false}; l.comment=''; });
+LINES.forEach(l => { l.orig = {qty:l.qty, rate:l.rate, price:l.price}; l.comment=''; });
 const LABOUR = [['Cutting and sawing',320,'#1F4A8E'],['Drilling',180,'#3A6FB5'],['Assembly',760,'#4DA3DB'],['Welding',690,'#8CC3E8'],['Handling',150,'#C3D6E8']];
 let labourOpen = true;
 const openComments = new Set();
@@ -688,13 +681,9 @@ const labourH = () => LINES[1].qty;
 
 function edCell(l,field){
   const v = l[field];
-  const ed = l.edited[field] || v !== l.orig[field];
   const pre = field==='rate' ? `<span class="u">${l.rp}</span>` : '';
   const suf = field==='rate' ? `<span class="u">${l.rs}</span>` : `<span class="u">&nbsp;${l.qu}</span>`;
-  let mark = '';
-  if (ed) mark = (l.pre && l.pre[field] && v===l.orig[field]) ? `<span class="emark">edited · was ${l.pre[field]}</span>`
-                : `<span class="emark">edited · AI ${field==='rate'?l.rp+l.orig.rate+l.rs:fmt2(l.orig.qty)+' '+l.qu}</span>`;
-  return `<div class="ed ${ed?'edited':''}">${pre}<input data-id="${l.id}" data-f="${field}" value="${fmt2(v)}" style="width:${String(fmt2(v)).length+0.3}ch" aria-label="${field}">${suf}</div>${mark}`;
+  return `<div class="ed">${pre}<input data-id="${l.id}" data-f="${field}" value="${fmt2(v)}" style="width:${String(fmt2(v)).length+0.3}ch" aria-label="${field}">${suf}</div>`;
 }
 function fmt2(v){ return Number.isInteger(v) ? v.toLocaleString('en-US') : v.toLocaleString('en-US',{maximumFractionDigits:2}); }
 
@@ -735,8 +724,7 @@ const esc = s => s.replace(/"/g,'&quot;');
 function chip(k,label){ const s=SRC[k]; const t=label.split(' · ')[0]; return `<button class="chip" data-src="${k}"><span class="ft ${s.ft}">${t}</span>${label.split(' · ').slice(1).join(' · ')}</button>`; }
 
 function updateSummary(total){
-  $('#kTotal').textContent = eur(total);
-  $('#kRange').textContent = `${eur(Math.round(total*315/333/1000)*1000)} – ${eur(Math.round(total*352/333/1000)*1000)}`;
+  $('#kTotal').textContent = `${eur(Math.round(total*315/333/1000)*1000)} – ${eur(Math.round(total*352/333/1000)*1000)}`;
   $('#kPerKg').textContent = `≈ €${(total/148000).toFixed(2)}/kg`;
   $('#kLabour').innerHTML = `${fmt(labourH())}<small>h</small>`;
   $('#kHpt').textContent = `${(labourH()/148).toFixed(1)} h/t`;
@@ -745,14 +733,6 @@ function updateSummary(total){
   $('#stack').innerHTML = cats.map(c=>`<div style="flex:${c[1]};background:${c[2]}" title="${c[0]}"></div>`).join('');
   $('#bdList').innerHTML = cats.map(c=>`<li><span class="sw" style="background:${c[2]}"></span><span>${c[0]}${c[3]?`<span style="color:var(--muted);font-size:12px"> · ${c[3]}</span>`:''}</span><span class="amt num">${eur(c[1])}</span><span class="pct num">${(c[1]/total*100).toFixed(1)}%</span></li>`).join('')
     + `<li class="tot"><span></span><span>Total</span><span class="amt num">${eur(total)}</span><span class="pct num">100%</span></li>`;
-  const edits = LINES.filter(l=>!l.margin && (l.edited.qty||l.edited.rate||l.qty!==l.orig.qty||l.rate!==l.orig.rate)).length;
-  $('#editCount').textContent = `${edits} line${edits===1?'':'s'} edited by estimator`;
-  updatePending();
-}
-function updatePending(){
-  const edits = LINES.filter(l=>!l.margin && (l.edited.qty||l.edited.rate||l.qty!==l.orig.qty||l.rate!==l.orig.rate)).length;
-  const cms = LINES.filter(l=>l.comment).length + ($('#globalComment').value.trim()?1:0);
-  $('#pendingHint').textContent = `${edits} edit${edits===1?'':'s'} · ${cms} comment${cms===1?'':'s'} pending`;
 }
 
 $('#ctBody').addEventListener('change', e=>{
@@ -761,11 +741,8 @@ $('#ctBody').addEventListener('change', e=>{
   const v = parseFloat(i.value.replace(/[^0-9.]/g,''));
   if (isNaN(v)) { renderTable(); return; }
   l[f] = v;
-  if (v !== l.orig[f]) { l.edited[f] = true; if (l.pre) delete l.pre[f]; }
   l.price = (l.qty===l.orig.qty && l.rate===l.orig.rate) ? l.orig.price : Math.round(l.qty*l.rate*l.f/10)*10;
   renderTable();
-  const pc = $('#p'+l.id); pc.classList.add('flash');
-  $('.ct tr.total .price').classList.add('flash');
 });
 $('#ctBody').addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.matches('input[data-f]')) e.target.blur(); });
 $('#ctBody').addEventListener('input', e=>{ if(e.target.matches('input[data-f]')) e.target.style.width = (Math.max(2,e.target.value.length)+0.3)+'ch'; });
@@ -777,7 +754,6 @@ $('#ctBody').addEventListener('click', e=>{
   if (sv) { const id=+sv.dataset.cms; const l=LINES.find(x=>x.id===id); l.comment=$(`[data-cmi="${id}"]`).value.trim(); openComments.delete(id); renderTable(); toast(l.comment?`Comment saved on line #${id}`:'Comment removed'); }
 });
 $('#ctBody').addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.matches('[data-cmi]')) $(`[data-cms="${e.target.dataset.cmi}"]`).click(); });
-$('#resetBtn').addEventListener('click', ()=>{ LINES.forEach(l=>{ if(l.margin) return; l.qty=l.orig.qty; l.rate=l.orig.rate; l.price=l.orig.price; }); renderTable(); toast('Quantities and rates reset; estimator edit on line #7 kept'); });
 
 /* ---------- Issues ---------- */
 const ISSUES = [
@@ -791,27 +767,22 @@ function renderIssues(){
   $('#issList').innerHTML = ISSUES.map((x,i)=>`
     <div class="card iss sev-${x.sev} ${x.state==='resolved'?'resolved':''}" data-i="${i}">
       <div>
-        <div class="tags"><span class="tag sev-${x.sev}">${cap(x.sev)} impact</span><span class="tag ${x.flag?'flag':'type'}">${x.flag?ICON.flag:''}${x.type}</span>${x.state?`<span class="state-tag ${x.state==='exclusion'?'excl':''}">${x.state==='resolved'?'Resolved':'Exclusion added'}</span>`:''}<span class="tag-src">${chip(x.src[0],x.src[1])}</span></div>
+        <div class="tags"><span class="tag sev-${x.sev}">${cap(x.sev)} impact</span><span class="tag ${x.flag?'flag':'type'}">${x.flag?ICON.flag:''}${x.type}</span>${x.state?'<span class="state-tag">Resolved</span>':''}</div>
+        <div class="iss-src">${chip(x.src[0],x.src[1])}</div>
         <div class="ttl">${x.t}</div>
       </div>
-      <div class="eff"><div class="k">Effect on price</div><div class="v ${x.eff[0]}">${x.eff[1]}</div><div class="d">${x.eff[2]}</div></div>
-      <div class="q"><div class="qh"><span class="k">${x.action?'Suggested action':'Question to client'}</span><button class="btn sec sm" data-copy="${i}">${x.action?ICON.check+'Create task':ICON.copy+'Copy question'}</button></div><span class="t">${x.action||x.q}</span></div>
+      <div class="eff"><div class="k">Effect on price</div><div class="v ${x.eff[0]}">${x.eff[1]}</div></div>
       <div class="acts">
         <button class="btn sec sm" data-res="${i}">${ICON.check}${x.state==='resolved'?'Reopen':'Mark resolved'}</button>
-        <button class="btn ghost sm" data-exc="${i}">${ICON.excl}${x.state==='exclusion'?'Remove exclusion':'Add as exclusion'}</button>
       </div>
     </div>`).join('');
   const open = ISSUES.filter(x=>x.state!=='resolved').length;
   $('#issBadge').textContent = open; $('#issBadge').style.display = open?'':'none';
   $('#kIssues').textContent = open;
-  $('#sumText').innerHTML = `<b>${open} open issue${open===1?'':'s'}</b> · potential price impact <span class="imp neg">−€7,000</span> / <span class="imp pos">+€60,000</span>`;
+  $('#sumText').innerHTML = `<div class="st-l"><b>Open issues: ${open}</b></div><div class="st-l">Price impact: <span class="imp neg">−€7,000</span> / <span class="imp pos">+€60,000</span></div>`;
 }
 $('#issList').addEventListener('click', e=>{
-  const c=e.target.closest('[data-copy]');
-  if(c){ const x=ISSUES[+c.dataset.copy]; const txt=x.action||x.q; try{navigator.clipboard&&navigator.clipboard.writeText(txt)}catch(_){}
-    c.innerHTML = ICON.check+(x.action?'Task created':'Copied'); setTimeout(()=>renderIssues(),1600); return; }
-  const r=e.target.closest('[data-res]'); if(r){ const x=ISSUES[+r.dataset.res]; x.state = x.state==='resolved'?null:'resolved'; renderIssues(); return; }
-  const x=e.target.closest('[data-exc]'); if(x){ const it=ISSUES[+x.dataset.exc]; it.state = it.state==='exclusion'?null:'exclusion'; renderIssues(); if(it.state) toast('Added to the exclusions list of the offer'); }
+  const r=e.target.closest('[data-res]'); if(r){ const x=ISSUES[+r.dataset.res]; x.state = x.state==='resolved'?null:'resolved'; renderIssues(); }
 });
 
 /* ---------- Files ---------- */
@@ -834,14 +805,13 @@ function renderFiles(){
   let h='';
   RELS.filter(r=>fFilter==='All'||fFilter===r).forEach(r=>{
     const fs = FILES.filter(f=>f[3]===r); if(!fs.length) return;
-    h += `<tr class="grp"><td colspan="5">${r==='Not used'?'Not used':r+' relevance'} · ${fs.length} file${fs.length>1?'s':''}</td></tr>`;
+    h += `<tr class="grp"><td colspan="4">${r==='Not used'?'Not used':r+' relevance'} · ${fs.length} file${fs.length>1?'s':''}</td></tr>`;
     fs.forEach(f=>{
       h += `<tr class="frow ${r==='Low'||r==='Not used'?'dim':''}" data-src="${f[6]}">
         <td><div class="fname"><span class="ft ${f[1]}">${f[1]}</span>${f[0]}</div></td>
         <td class="ftype">${f[2]}</td>
         <td><span class="rel ${r.split(' ')[0]}">${r}</span></td>
-        <td>${f[4].length?`<div class="bs">${f[4].map(x=>`<span>${x}</span>`).join('')}</div>`:'<span class="dash">—</span>'}</td>
-        <td class="used">${f[5]==='—'?'<span class="dash">—</span>':f[5]}</td></tr>`;
+        <td>${f[4].length?`<div class="bs">${f[4].map(x=>`<span>${x}</span>`).join('')}</div>`:'<span class="dash">—</span>'}</td></tr>`;
     });
   });
   $('#ftBody').innerHTML = h;
@@ -888,14 +858,14 @@ $('#nav').addEventListener('click', e=>{ const a=e.target.closest('a'); if(a) go
 let ver = 2;
 function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('on'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('on'),2200); }
 $('#exportBtn').addEventListener('click', ()=>toast(`Draft v${ver} exported as PDF (mock)`));
-$('#globalComment').addEventListener('input', updatePending);
 let timers=[];
 $('#sendBtn').addEventListener('click', ()=>{
   const cm = $('#globalComment').value.trim();
-  const edits = LINES.filter(l=>!l.margin && (l.edited.qty||l.edited.rate||l.qty!==l.orig.qty||l.rate!==l.orig.rate)).length;
+  const edits = LINES.filter(l=>!l.margin && (l.qty!==l.orig.qty||l.rate!==l.orig.rate)).length;
   const lcm = LINES.filter(l=>l.comment).length;
   $('#mTitle').textContent='Re-running the analysis';
-  $('#mSub').textContent = `Applying ${edits} estimator edit${edits===1?'':'s'}${(cm||lcm)?` and ${(cm?1:0)+lcm} comment${((cm?1:0)+lcm)===1?'':'s'}`:''} to Draft v${ver}.`;
+  const n = edits + lcm + (cm?1:0);
+  $('#mSub').textContent = n ? `Applying ${n} change${n===1?'':'s'} from the estimator to Draft v${ver}.` : `Re-analysing Draft v${ver}.`;
   $('#mCm').style.display = cm?'':'none'; $('#mCm').textContent = cm?`“${cm}”`:'';
   const steps=$$('#steps li'); steps.forEach(s=>{s.className=s.classList.contains('final')?'final':''; s.querySelector('.tm').textContent='';});
   $('#steps li:last-child').innerHTML = $('#steps li:last-child').innerHTML.replace(/Report v\d+ ready/,`Report v${ver+1} ready`);
@@ -913,12 +883,12 @@ $('#sendBtn').addEventListener('click', ()=>{
 });
 function finish(){
   ver++;
-  $('#verText').textContent=`Draft v${ver} · re-analysed by AI`; $('#verChip').classList.add('fresh');
+  $('#verText').textContent=`Draft v${ver}`;
   $('#lastRun').textContent='Today 14:36 · 6 files';
   $('#mTitle').textContent=`Report v${ver} ready`;
-  $('#mSub').textContent='All cost lines recalculated. Your edits are kept and marked in the report.';
+  $('#mSub').textContent='All cost lines recalculated. Your edits are kept in the report.';
   $('#mDone').style.display=''; $('#mCancel').style.display='none';
-  $('#globalComment').value=''; updatePending();
+  $('#globalComment').value='';
 }
 function closeModal(){ timers.forEach(clearTimeout); $('#modal').classList.remove('on'); $('#mScrim').classList.remove('on'); }
 $('#mDone').addEventListener('click', closeModal);
