@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MARU Quote Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#1F4A8E; --navy-d:#173A72; --sky:#4DA3DB; --sky-t:#EAF4FB;
+  --bg:#F4F6F9; --surface:#FFFFFF; --text:#22324A; --muted:#6B7A90; --border:#DDE3EA; --line:#EDF1F5;
+  --hi:#2E8B57; --hi-t:#E7F3EC; --md:#D89B2B; --md-t:#FBF2E1; --lo:#C8553D; --lo-t:#F9E9E5;
+  --edit:#FFF4CC; --edit-b:#EBCB6B;
+  --num:"Manrope","Sora",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:"Sora","Manrope",sans-serif;font-size:15px;line-height:1.5;color:var(--text);background:var(--bg);overflow:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;background:#fff;opacity:.6;clip-path:polygon(58% 0,100% 0,100% 100%,30% 100%);pointer-events:none;z-index:0}
+body::after{content:"";position:fixed;inset:0;background:#E9EDF3;opacity:.5;clip-path:polygon(0 62%,22% 100%,0 100%);pointer-events:none;z-index:0}
+button{font-family:inherit;cursor:pointer}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"lnum" 1}
+
+/* App grid */
+.app{position:relative;z-index:1;height:100vh;display:grid;grid-template-columns:232px 1fr;grid-template-rows:64px 20px 1fr 76px}
+
+/* Header */
+.header{grid-column:1/-1;display:grid;grid-template-columns:232px 1fr auto;align-items:center;background:#fff;border-bottom:1px solid var(--border);padding-right:28px}
+.brand{display:flex;align-items:baseline;gap:12px;padding-left:28px}
+.wordmark{font-weight:700;letter-spacing:.32em;color:var(--navy);font-size:20px}
+.brand-sub{color:var(--sky);font-size:13px;font-weight:500;letter-spacing:.02em;white-space:nowrap}
+.proj{display:flex;align-items:center;gap:14px;justify-content:center;min-width:0}
+.proj-name{font-size:15px;font-weight:500;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip-ver{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--text);border:1px solid var(--border);background:#F8FAFC;border-radius:3px;padding:4px 10px;white-space:nowrap;transition:background .4s,border-color .4s}
+.chip-ver .dot{width:7px;height:7px;border-radius:50%;background:var(--md)}
+.chip-ver.fresh{background:var(--sky-t);border-color:#B9DBF1}
+.chip-ver.fresh .dot{background:var(--hi)}
+.hdr-right{display:flex;align-items:center;gap:24px}
+.lang{font-size:13px;color:var(--muted);letter-spacing:.04em}
+.lang b{color:var(--navy);font-weight:600}
+.lang span{margin:0 6px;color:var(--border)}
+.burger{width:26px;height:18px;display:flex;flex-direction:column;justify-content:space-between;background:none;border:0;padding:0}
+.burger i{display:block;height:1.5px;background:var(--navy);border-radius:1px}
+
+/* Industrial band */
+.band{grid-column:1/-1;position:relative;overflow:hidden;
+  background:
+   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='20'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.22' stroke-width='1'%3E%3Cpath d='M0 1.5H96M0 18.5H96M0 1.5V18.5M48 1.5V18.5M0 18.5L48 1.5M48 1.5L96 18.5'/%3E%3C/g%3E%3C/svg%3E"),
+   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='288' height='20'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.18' stroke-width='3'%3E%3Cpath d='M0 0V20M144 0V20'/%3E%3C/g%3E%3C/svg%3E"),
+   linear-gradient(90deg,#152C4F 0%,#24497A 30%,#3D6797 55%,#7D9BBE 80%,#C3D2E2 100%);
+}
+.band::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(0,0,0,.15))}
+
+/* Sidebar */
+.side{background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0 20px;min-height:0}
+.nav-lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:0 28px 10px}
+.nav a{display:flex;align-items:center;gap:12px;padding:11px 28px;color:var(--text);text-decoration:none;font-size:14.5px;border-left:3px solid transparent;cursor:pointer}
+.nav a svg{width:18px;height:18px;stroke:var(--muted);flex:none}
+.nav a:hover{background:#F7F9FB}
+.nav a.active{background:var(--sky-t);border-left-color:var(--sky);color:var(--navy);font-weight:500}
+.nav a.active svg{stroke:var(--navy)}
+.nav .badge{margin-left:auto;background:var(--lo);color:#fff;font-size:11px;font-weight:600;min-width:20px;height:20px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+.side-foot{margin-top:auto;padding:0 28px;font-size:12px;color:var(--muted)}
+.side-foot .row{padding:10px 0;border-top:1px solid var(--line)}
+.side-foot .k{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.side-foot .v{color:var(--text);font-size:12.5px;word-break:break-word}
+
+/* Main */
+.main{overflow:auto;padding:20px 40px 24px;min-width:0}
+.page{display:none;animation:fade .25s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.phead{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:16px}
+.eyebrow{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.eyebrow::before{content:"\\";color:var(--sky);font-weight:600;margin-right:8px}
+h1{font-size:40px;font-weight:400;color:var(--navy);margin:0;line-height:1.1;letter-spacing:-.01em}
+.pmeta{font-size:13px;color:var(--muted);text-align:right;line-height:1.6}
+.pmeta b{color:var(--text);font-weight:500}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:3px}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 24px;border-bottom:1px solid var(--line)}
+.card-h h3{margin:0;font-size:16px;font-weight:500;color:var(--navy);white-space:nowrap}
+.card-h .sub{font-size:12px;color:var(--muted)}
+.card-b{padding:16px 24px}
+
+/* Overview */
+.kpis{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+.kpi{padding:16px 24px;position:relative}
+.kpi .lbl{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kpi .big{font-size:34px;font-weight:600;color:var(--navy);line-height:1.15;margin:6px 0 4px;letter-spacing:-.01em}
+.kpi .big small{font-size:18px;font-weight:500;color:var(--muted);margin-left:4px}
+.kpi .meta{font-size:13px;color:var(--muted)}
+.kpi .meta b{color:var(--text);font-weight:500}
+.kpi.primary{border-top:3px solid var(--navy)}
+.kpi .perkg{position:absolute;top:16px;right:24px;font-size:12px;background:var(--sky-t);color:var(--navy);padding:3px 8px;border-radius:3px}
+.conf-word{color:var(--md)!important}
+.meter{display:flex;gap:4px;margin:2px 0 8px}
+.meter i{height:6px;flex:1;background:var(--line);border-radius:1px}
+.meter i.on{background:var(--md)}
+.kpi a,.link{color:var(--navy);font-size:13px;text-decoration:none;border-bottom:1px solid #B9CDE8;cursor:pointer}
+.kpi a:hover,.link:hover{border-bottom-color:var(--navy)}
+.big.red{color:var(--lo)}
+
+.ov-grid{display:grid;grid-template-columns:1.12fr 1.2fr 1fr;gap:16px}
+.dl{display:grid;grid-template-columns:auto 1fr;margin:0}
+.dl dt,.dl dd{padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;margin:0}
+.dl dt{color:var(--muted);padding-right:16px;white-space:nowrap}
+.dl dd{text-align:right;font-weight:500;color:var(--text)}
+.dl dt:last-of-type,.dl dd:last-of-type{border-bottom:0}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:3px;background:var(--sky-t);color:var(--navy);letter-spacing:.03em}
+
+.stack{display:flex;height:24px;border-radius:2px;overflow:hidden;margin:4px 0 12px}
+.stack div{height:100%;transition:flex-grow .3s}
+.bd-list{list-style:none;margin:0;padding:0}
+.bd-list li{display:grid;grid-template-columns:12px 1fr auto 52px;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.bd-list li:last-child{border-bottom:0}
+.bd-list .sw{width:12px;height:12px;border-radius:2px}
+.bd-list .amt{text-align:right;font-weight:500}
+.bd-list .pct{text-align:right;color:var(--muted);font-size:13px}
+.bd-list li.tot{border-top:1px solid var(--border);font-weight:600;color:var(--navy);padding-top:10px}
+
+.env-m{padding:10px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:2px 16px;align-items:baseline}
+.env-m:first-child{padding-top:0}
+.env-m .k{font-size:13px;color:var(--muted)}
+.env-m .v{font-size:22px;font-weight:600;color:var(--navy);text-align:right;white-space:nowrap}
+.env-m .d{grid-column:1/-1;font-size:12.5px;color:var(--muted)}
+.env-flag{display:flex;gap:12px;align-items:flex-start;padding:12px 0 4px}
+.env-flag svg{flex:none;width:18px;height:18px;margin-top:2px}
+.env-flag .t{font-size:14px;font-weight:500}
+.env-flag .v{font-size:22px;font-weight:600;color:var(--lo);margin-left:auto;white-space:nowrap}
+.note{font-size:12px;color:var(--muted);background:#F7F9FB;border-left:2px solid var(--sky);padding:8px 12px;margin-top:12px}
+.leaf{width:16px;height:16px;stroke:var(--hi);vertical-align:-3px;margin-right:6px}
+
+/* Cost lines */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:13px;color:var(--muted)}
+.toolbar .legend{display:flex;gap:16px;align-items:center}
+.lg-edit{display:inline-block;width:12px;height:12px;background:var(--edit);border:1px solid var(--edit-b);border-radius:2px;vertical-align:-2px;margin-right:6px}
+.tbl-wrap{overflow-x:auto}
+table.ct{width:100%;border-collapse:collapse;min-width:1040px;table-layout:fixed}
+.ct th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:left;padding:12px 12px;border-bottom:1px solid var(--border);background:#FAFBFC;white-space:nowrap}
+.ct th.r,.ct td.r{text-align:right}
+.ct td{padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:14px}
+.ct tr.main-row:hover td{background:#FBFCFD}
+.ct td.idx{color:var(--muted);padding-left:20px}
+.ct th:first-child{padding-left:20px}
+.ln-name{font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.ln-desc{font-size:12px;color:var(--muted);margin-top:1px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.exp-btn{border:0;background:none;padding:2px;display:inline-flex;color:var(--sky);border-radius:2px}
+.exp-btn svg{width:14px;height:14px;transition:transform .2s;stroke:currentColor}
+.exp-btn.open svg{transform:rotate(90deg)}
+.ed{display:inline-flex;align-items:baseline;justify-content:flex-end;gap:2px;padding:3px 6px;border-radius:3px;position:relative;border:1px solid transparent;white-space:nowrap}
+.ed .u{color:var(--muted);font-size:13px}
+.ed input{font:inherit;font-family:var(--num);font-variant-numeric:tabular-nums;font-size:14px;color:var(--text);border:0;border-bottom:1px dashed transparent;background:transparent;text-align:right;padding:0;min-width:2ch;outline:none}
+.ed:hover input{border-bottom-color:var(--sky)}
+.ed input:focus{border-bottom:1px solid var(--navy)}
+.ed:focus-within{background:var(--sky-t)}
+.ed.edited{background:var(--edit);border-color:var(--edit-b)}
+.emark{display:block;text-align:right;font-size:10.5px;color:#8A6400;letter-spacing:.02em;margin-top:2px;white-space:nowrap}
+.emark::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:#D8A31C;margin-right:5px;vertical-align:1px}
+.price{font-weight:600;color:var(--text)}
+.price.flash{animation:flash .8s}
+@keyframes flash{0%{background:var(--edit)}100%{background:transparent}}
+.dash{color:#AEB8C6}
+.conf{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:3px;white-space:nowrap}
+.conf::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.conf.high{color:var(--hi);background:var(--hi-t)}
+.conf.medium{color:#A87412;background:var(--md-t)}
+.conf.low{color:var(--lo);background:var(--lo-t)}
+.srcs{display:flex;flex-wrap:wrap;gap:4px 6px;max-width:100%}
+.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:#fff;border-radius:3px;padding:3px 7px 3px 3px;font-size:12px;color:var(--text);white-space:nowrap;transition:border-color .15s,background .15s}
+.chip:hover{border-color:var(--sky);background:var(--sky-t)}
+.chip.on{border-color:var(--navy);background:var(--sky-t)}
+.ft{display:inline-flex;align-items:center;justify-content:center;font-family:var(--num);font-size:9.5px;font-weight:700;letter-spacing:.04em;border-radius:2px;padding:0 4px;height:16px;min-width:27px}
+.ft.IFC{background:#E4ECF7;color:var(--navy)}
+.ft.PDF{background:#F7E4DF;color:#B04A35}
+.ft.XLSX{background:#E2F1E8;color:#24734A}
+.ft.EML{background:#E3F1FA;color:#2B7FB5}
+.ft.RULE{background:var(--navy);color:#fff}
+.ft.PNG{background:#FAEFD9;color:#9A6A10}
+.ft.DB1,.ft.ZIP{background:#ECEFF3;color:#56657A}
+.cm-btn{border:0;background:none;padding:6px;border-radius:3px;color:#9AA6B6;position:relative;display:inline-flex}
+.cm-btn svg{width:17px;height:17px;stroke:currentColor}
+.cm-btn:hover{color:var(--navy);background:#F1F4F8}
+.cm-btn.has{color:var(--sky)}
+.cm-btn.has::after{content:"";position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--sky);border:1px solid #fff}
+tr.sub td{background:#FAFBFD;padding:8px 12px 10px 20px}
+.lb{display:grid;grid-template-columns:180px 1fr;gap:24px;align-items:center;padding-left:36px}
+.lb .t{font-size:12.5px;color:var(--muted);line-height:1.4}
+.lb .t b{display:block;color:var(--text);font-weight:600;font-size:13px}.lb .t{white-space:nowrap}
+.lb-bar{display:flex;height:4px;border-radius:2px;overflow:hidden;margin-bottom:6px}
+.lb-items{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.lb-items div{font-size:12.5px;color:var(--muted);border-left:2px solid;padding-left:8px;display:flex;gap:8px;align-items:baseline;white-space:nowrap}
+.lb-items b{color:var(--text);font-size:14px;font-weight:600}
+tr.cmt td{background:#F6FAFD;padding:10px 12px 12px 56px}
+.cmt-box{display:flex;gap:8px;align-items:center}
+.cmt-box svg{width:16px;height:16px;stroke:var(--sky);flex:none}
+.cmt-box input{flex:1;font:inherit;font-size:13.5px;border:1px solid var(--border);border-radius:3px;padding:8px 12px;background:#fff;color:var(--text);outline:none}
+.cmt-box input:focus{border-color:var(--sky)}
+tr.total td{background:#F4F7FA;font-weight:700;color:var(--navy);border-bottom:0;padding-top:14px;padding-bottom:14px;font-size:15px}
+tr.total td.price{font-size:17px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:500;border-radius:3px;padding:10px 18px;border:1px solid var(--navy);background:var(--navy);color:#fff;white-space:nowrap;transition:background .15s}
+.btn:hover{background:var(--navy-d)}
+.btn svg{width:16px;height:16px;stroke:currentColor}
+.btn.sec{background:#fff;color:var(--navy);border-color:#B8C6D9}
+.btn.sec:hover{background:#F3F6FA}
+.btn.sm{font-size:12.5px;padding:6px 12px}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--navy);padding-left:8px;padding-right:8px}
+.btn.ghost:hover{background:#F1F4F8}
+
+/* Issues */
+.sumbar{display:flex;align-items:center;gap:24px;padding:12px 24px;margin-bottom:12px}
+.sumbar .main-t{font-size:15px;font-weight:500;color:var(--navy)}
+.sumbar .main-t b{font-weight:600}
+.sumbar .imp{font-family:var(--num);font-weight:700}
+.sumbar .neg{color:var(--hi)}
+.sumbar .pos{color:var(--lo)}
+.sumbar .counts{margin-left:auto;display:flex;gap:16px;font-size:13px;color:var(--muted)}
+.sumbar .counts span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:currentColor;vertical-align:0}
+.iss-list{display:flex;flex-direction:column;gap:8px}
+.iss{display:grid;grid-template-columns:minmax(0,1.35fr) 160px minmax(0,1.3fr) 150px;gap:24px;align-items:center;padding:12px 20px 12px 22px;border-left:3px solid var(--border);transition:opacity .3s}
+.iss.sev-high{border-left-color:var(--lo)}
+.iss.sev-medium{border-left-color:var(--md)}
+.iss.sev-low{border-left-color:#9AA6B6}
+.tags{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
+.tag{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:2px;display:inline-flex;align-items:center;gap:5px}
+.tag.sev-high{background:var(--lo-t);color:var(--lo)}
+.tag.sev-medium{background:var(--md-t);color:#A87412}
+.tag.sev-low{background:#EEF1F5;color:#56657A}
+.tag.type{background:#fff;border:1px solid var(--border);color:var(--muted)}
+.tag.flag{background:#fff;border:1px solid #E8B7AB;color:var(--lo)}
+.tag svg{width:11px;height:11px}
+.iss .ttl{font-size:15px;font-weight:500;color:var(--text);line-height:1.35}
+.eff .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.eff .v{font-family:var(--num);font-size:17px;font-weight:700;color:var(--text);line-height:1.3}
+.eff .v.up{color:var(--lo)} .eff .v.down{color:var(--hi)} .eff .v.none{color:var(--muted);font-weight:600}
+.eff .d{font-size:12px;color:var(--muted);line-height:1.35}
+.q{background:#F7F9FB;border:1px solid var(--line);border-radius:3px;padding:8px 12px;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.q .qh{display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px}.tag-src{margin-left:2px}.tag-src .chip{padding-top:1px;padding-bottom:1px}.q .k{white-space:nowrap;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:block}
+.q .t{font-size:13.5px;color:var(--text);line-height:1.4}
+.q .t::before{content:"\\ ";color:var(--sky);font-weight:600}
+.q .btn{flex:none;padding:2px 0;border:0;background:none;color:var(--navy);font-size:12.5px}.q .btn:hover{background:none;text-decoration:underline}.q .btn svg{width:14px;height:14px}
+.acts{display:flex;flex-direction:column;gap:4px}
+.acts .btn{justify-content:center}
+.iss.resolved{opacity:.5}
+.iss.resolved .ttl{text-decoration:line-through}
+.state-tag{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:2px;background:var(--hi-t);color:var(--hi)}
+.state-tag.excl{background:#E9EEF6;color:var(--navy)}
+
+/* Files */
+.f-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+.path{font-family:var(--num);font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.path svg{width:16px;height:16px;stroke:var(--sky)}
+.path b{color:var(--text);font-weight:600}
+.fchips{display:flex;gap:6px}
+.fchip{font-size:13px;border:1px solid var(--border);background:#fff;color:var(--text);border-radius:3px;padding:5px 12px}
+.fchip span{color:var(--muted);margin-left:4px;font-family:var(--num)}
+.fchip:hover{border-color:var(--sky)}
+.fchip.active{background:var(--navy);border-color:var(--navy);color:#fff}
+.fchip.active span{color:#C6D6EE}
+.scan{font-size:13px;color:var(--muted);padding:10px 20px;border-bottom:1px solid var(--line);display:flex;gap:20px;align-items:center}
+.scan b{color:var(--text);font-weight:600}
+.scan .ok{display:inline-flex;align-items:center;gap:6px;color:var(--hi);font-weight:500}
+.scan .ok svg{width:14px;height:14px;stroke:currentColor}
+table.ft-t{width:100%;border-collapse:collapse}
+.ft-t th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);background:#FAFBFC}
+.ft-t th:first-child,.ft-t td:first-child{padding-left:20px}
+.ft-t td{padding:7px 14px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle}
+.ft-t tr.grp td{background:#F7F9FB;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-top:5px;padding-bottom:5px;font-weight:600}
+.ft-t tr.frow{cursor:pointer}
+.ft-t tr.frow:hover td{background:#FBFCFD}
+.fname{display:flex;align-items:center;gap:10px;font-weight:500;color:var(--text)}
+.fname .ft{min-width:36px}
+.ftype{color:var(--muted);font-size:13px;white-space:nowrap}
+.rel{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:2px;white-space:nowrap}
+.rel.High{background:var(--navy);color:#fff}
+.rel.Medium{background:#D7EAF7;color:#1F6A9C}
+.rel.Low{background:#EEF1F5;color:#56657A}
+.rel.Not{background:#fff;color:#8A96A7;border:1px dashed #C4CDD8}
+.bs{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13.5px}
+.bs span::before,.bl li::before{content:"\\";color:var(--sky);font-weight:600;margin-right:6px}
+.used{font-family:var(--num);font-weight:600;color:var(--navy);white-space:nowrap}
+.frow.dim .fname,.frow.dim .bs{color:var(--muted)}
+
+/* Bottom bar */
+.bbar{grid-column:1/-1;background:#fff;border-top:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 28px;z-index:5}
+.cbox{flex:1;display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:3px;padding:0 14px;height:44px;background:#FAFBFC;max-width:900px}
+.cbox:focus-within{border-color:var(--sky);background:#fff}
+.cbox svg{width:18px;height:18px;stroke:var(--sky);flex:none}
+.cbox input{flex:1;border:0;background:transparent;font:inherit;font-size:14px;color:var(--text);outline:none;min-width:0}
+.cbox input::placeholder{color:#97A3B4}
+.bbar .spacer{flex:1}
+.bbar .hint{font-size:12px;color:var(--muted);white-space:nowrap}
+.bbar .btn{height:44px}
+
+/* Drawer */
+.scrim{position:fixed;inset:0;background:rgba(20,36,62,.28);opacity:0;pointer-events:none;transition:opacity .25s;z-index:20}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:480px;background:#fff;border-left:1px solid var(--border);z-index:21;transform:translateX(100%);transition:transform .3s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(20,36,62,.08)}
+.drawer.on{transform:none}
+.dr-h{padding:24px 28px 20px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:flex-start}
+.dr-h .ft{height:22px;min-width:44px;font-size:11px;margin-top:3px}
+.dr-h .fn{font-size:18px;font-weight:500;color:var(--navy);line-height:1.3;word-break:break-word}
+.dr-h .fs{font-size:13px;color:var(--muted);margin-top:4px}
+.x{margin-left:auto;border:0;background:none;padding:6px;border-radius:3px;color:var(--muted);display:inline-flex}
+.x:hover{background:#F1F4F8;color:var(--navy)}
+.x svg{width:18px;height:18px;stroke:currentColor}
+.dr-b{padding:20px 28px;overflow:auto;flex:1}
+.dr-sec{margin-bottom:24px}
+.dr-sec .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.dr-meta{display:grid;grid-template-columns:120px 1fr;font-size:14px}
+.dr-meta div{padding:8px 0;border-bottom:1px solid var(--line)}
+.dr-meta div:nth-child(odd){color:var(--muted)}
+.loc{display:flex;gap:10px;align-items:flex-start;font-size:14px;background:#F7F9FB;border:1px solid var(--line);padding:10px 12px;border-radius:3px}
+.loc svg{width:16px;height:16px;stroke:var(--sky);flex:none;margin-top:3px}
+.excerpt{font-size:14.5px;line-height:1.65;color:var(--text);border-left:3px solid var(--sky);padding:12px 16px;background:#FBFCFE;font-style:italic}
+.excerpt mark{background:#FFF0B3;color:var(--text);padding:1px 3px;border-radius:2px;font-style:normal;font-weight:500;box-shadow:inset 0 -2px 0 #EBCB6B}
+.bl{list-style:none;margin:0;padding:0;font-size:14px}
+.bl li{padding:5px 0}
+.dr-f{padding:16px 28px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.dr-f .conf-note{margin-left:auto;font-size:12px;color:var(--muted)}
+
+/* Modal */
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:30;pointer-events:none}
+.modal .box{width:520px;background:#fff;border:1px solid var(--border);border-radius:4px;box-shadow:0 20px 48px rgba(20,36,62,.18);opacity:0;transform:translateY(8px) scale(.98);transition:all .25s}
+.modal.on{pointer-events:auto}
+.modal.on .box{opacity:1;transform:none}
+.m-h{padding:24px 28px 8px}
+.m-h .eyebrow{margin-bottom:6px}
+.m-h h2{margin:0;font-size:24px;font-weight:400;color:var(--navy)}
+.m-h p{margin:8px 0 0;font-size:13.5px;color:var(--muted)}
+.m-cm{margin:12px 28px 0;font-size:13px;background:#F7F9FB;border-left:2px solid var(--sky);padding:8px 12px;color:var(--text)}
+.steps{list-style:none;margin:0;padding:16px 28px 8px}
+.steps li{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);font-size:15px;color:#A0ABBA;transition:color .2s}
+.steps li:last-child{border-bottom:0}
+.steps .ic{width:24px;height:24px;border-radius:50%;border:1.5px solid #D2D9E2;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.steps .ic svg{width:14px;height:14px;stroke:#fff;display:none}
+.steps li.run{color:var(--text)}
+.steps li.run .ic{border-color:var(--sky);border-top-color:transparent;animation:spin .8s linear infinite}
+.steps li.done{color:var(--text)}
+.steps li.done .ic{background:var(--hi);border-color:var(--hi)}
+.steps li.done .ic svg{display:block}
+.steps li.final.done{color:var(--navy);font-weight:600}
+.steps li.final.done .ic{background:var(--navy);border-color:var(--navy)}
+.steps .tm{margin-left:auto;font-family:var(--num);font-size:12px;color:var(--muted)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.prog{height:3px;background:var(--line);margin:0 28px;border-radius:2px;overflow:hidden}
+.prog div{height:100%;width:0;background:var(--sky);transition:width .5s}
+.m-f{padding:16px 28px 24px;display:flex;justify-content:flex-end;gap:10px}
+
+.toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,12px);background:var(--text);color:#fff;font-size:13.5px;padding:10px 16px;border-radius:3px;opacity:0;transition:all .25s;z-index:40;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:1360px){
+  .app{grid-template-columns:208px 1fr}
+  .header{grid-template-columns:208px 1fr auto}
+  .brand{padding-left:24px}
+  .nav a{padding:11px 22px}
+  .nav-lbl,.side-foot{padding-left:22px;padding-right:22px}
+  .main{padding:24px 28px 28px}
+  .kpi .big{font-size:32px}
+  .iss{grid-template-columns:minmax(0,1.4fr) 150px minmax(0,1.2fr) 156px;gap:18px}
+  .bbar .hint{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="brand"><span class="wordmark">MARU</span><span class="brand-sub">Quote Assistant</span></div>
+    <div class="proj">
+      <span class="proj-name">Akkasæter, steel hall — DS Nor</span>
+      <span class="chip-ver" id="verChip"><span class="dot"></span><span id="verText">Draft v2 · edited by estimator</span></span>
+    </div>
+    <div class="hdr-right">
+      <div class="lang">ET<span>|</span><b>EN</b></div>
+      <button class="burger" aria-label="Menu"><i></i><i></i><i></i></button>
+    </div>
+  </header>
+  <div class="band" aria-hidden="true"></div>
+
+  <!-- Sidebar -->
+  <aside class="side">
+    <div class="nav-lbl">Quote report</div>
+    <nav class="nav" id="nav">
+      <a data-page="overview" class="active"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7"/><rect x="13.5" y="3.5" width="7" height="7"/><rect x="3.5" y="13.5" width="7" height="7"/><rect x="13.5" y="13.5" width="7" height="7"/></svg>Overview</a>
+      <a data-page="costs"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Cost lines</a>
+      <a data-page="issues"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M12 3.5 21 19.5H3z"/><path d="M12 10v4.5M12 16.8v.2"/></svg>Open issues<span class="badge" id="issBadge">5</span></a>
+      <a data-page="files"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M3.5 6.5h6l2 2h9v10h-17z"/></svg>Project files</a>
+    </nav>
+    <div class="side-foot">
+      <div class="row"><span class="k">Rate file</span><span class="v">Maru_rate_file_2026.xlsx</span></div>
+      <div class="row"><span class="k">Last AI run</span><span class="v" id="lastRun">Today 14:32 · 6 files</span></div>
+      <div class="row"><span class="k">Bid deadline</span><span class="v">23 Oct 2026 · 14 days left</span></div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main" id="main">
+
+    <!-- Overview -->
+    <section class="page active" id="page-overview">
+      <div class="phead">
+        <div><div class="eyebrow">Quote report</div><h1>Overview</h1></div>
+        <div class="pmeta">Generated by AI <b>today 14:32</b> · reviewed by estimator<br>Prices from <b>Maru_rate_file_2026.xlsx</b></div>
+      </div>
+
+      <div class="kpis">
+        <div class="card kpi primary">
+          <div class="lbl">Total price</div>
+          <span class="perkg num" id="kPerKg">≈ €2.25/kg</span>
+          <div class="big num" id="kTotal">€333,000</div>
+          <div class="meta">Range <b class="num" id="kRange">€315,000 – €352,000</b></div>
+        </div>
+        <div class="card kpi">
+          <div class="lbl">Labour</div>
+          <div class="big num" id="kLabour">2,100<small>h</small></div>
+          <div class="meta"><b class="num" id="kHpt">14.2 h/t</b> · fabrication in Ardu</div>
+        </div>
+        <div class="card kpi">
+          <div class="lbl">Overall confidence</div>
+          <div class="big conf-word">Medium</div>
+          <div class="meter"><i class="on"></i><i class="on"></i><i></i></div>
+          <div class="meta">3 high · 3 medium · 1 low lines</div>
+        </div>
+        <div class="card kpi">
+          <div class="lbl">Open issues</div>
+          <div class="big red num" id="kIssues">5</div>
+          <div class="meta">1 high impact · <a data-goto="issues">Review issues</a></div>
+        </div>
+      </div>
+
+      <div class="ov-grid">
+        <div class="card">
+          <div class="card-h"><h3>Project summary</h3><span class="sub">From RFQ form</span></div>
+          <div class="card-b" style="padding-top:6px;padding-bottom:6px">
+            <dl class="dl">
+              <dt>Client</dt><dd>DS Nor</dd>
+              <dt>Project</dt><dd>Akkasæter steel hall, Norway</dd>
+              <dt>Type</dt><dd>Steel frame with platforms</dd>
+              <dt>Execution class</dt><dd><span class="pill">EXC2</span></dd>
+              <dt>Net steel</dt><dd class="num">148 t</dd>
+              <dt>Input level</dt><dd>Full project<span style="display:block;font-weight:400;color:var(--muted);font-size:12px;white-space:nowrap">IFC + material lists + RFQ form</span></dd>
+              <dt>Delivery</dt><dd>DAP site, Norway</dd>
+              <dt>Bid deadline</dt><dd class="num">23 Oct 2026</dd>
+            </dl>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>Cost breakdown</h3><a class="link" data-goto="costs">All cost lines</a></div>
+          <div class="card-b">
+            <div class="stack" id="stack"></div>
+            <ul class="bd-list" id="bdList"></ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3><svg class="leaf" viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M5 19c0-8 5-14 15-14 0 10-6 15-14 15"/><path d="M5 19 13 11"/></svg>Environmental impact</h3></div>
+          <div class="card-b">
+            <div class="env-m"><span class="k">Steel bought</span><span class="v num">158.4 t</span><span class="d">148 t net + 10.4 t offcuts (7%)</span></div>
+            <div class="env-m"><span class="k">Carbon footprint</span><span class="v num">≈ 150 t CO<sub style="font-size:.6em">2</sub>e</span><span class="d">≈ 1.0 t CO<sub>2</sub>e per t steel</span></div>
+            <div class="env-flag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#C8553D" stroke-width="1.8"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>
+              <div><div class="k" style="font-size:13px;color:var(--muted)">EU norms check</div><div class="t">No EN 15804 EPD for paint system</div><a class="link" data-goto="issues">See open issues</a></div>
+              <span class="v num">1 flag</span>
+            </div>
+            <div class="note">Indicative factors, to be replaced by supplier EPDs.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cost lines -->
+    <section class="page" id="page-costs">
+      <div class="phead">
+        <div><div class="eyebrow">Quote report</div><h1>Cost lines</h1></div>
+        <div class="pmeta">Rule engine · rates from <b>Maru_rate_file_2026.xlsx</b> · EUR, excl. VAT<br><span class="lg-edit"></span><span id="editCount">1 line edited by estimator</span> · click a quantity or rate to edit · <a class="link" id="resetBtn">Reset to AI values</a></div>
+      </div>
+      <div class="card tbl-wrap">
+        <table class="ct">
+          <colgroup><col style="width:44px"><col style="width:29.5%"><col style="width:9.5%"><col style="width:10.5%"><col style="width:7%"><col style="width:8.5%"><col style="width:9%"><col style="width:26%"><col style="width:44px"></colgroup>
+          <thead><tr>
+            <th>#</th><th>Cost line</th><th class="r">Quantity</th><th class="r">Unit rate</th><th class="r">Labour&nbsp;h</th><th class="r" style="white-space:normal;line-height:1.3">Estimated<br>price (€)</th><th>Confidence</th><th>Source</th><th></th>
+          </tr></thead>
+          <tbody id="ctBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Open issues -->
+    <section class="page" id="page-issues">
+      <div class="phead">
+        <div><div class="eyebrow">Quote report</div><h1>Open issues</h1></div>
+        <div class="pmeta">Missing, incomplete or unclear information<br>found while analysing <b>6 relevant files</b></div>
+      </div>
+      <div class="card sumbar">
+        <div class="main-t" id="sumText"></div>
+        <div class="counts"><span style="color:var(--lo)">1 high</span><span style="color:var(--md)">2 medium</span><span style="color:#9AA6B6">2 low</span></div>
+      </div>
+      <div class="iss-list" id="issList"></div>
+    </section>
+
+    <!-- Project files -->
+    <section class="page" id="page-files">
+      <div class="phead">
+        <div><div class="eyebrow">Quote report</div><h1>Project files</h1></div>
+        <div class="pmeta">Read from Maru's shared drive<br>Click a file to see what was extracted</div>
+      </div>
+      <div class="f-head">
+        <div class="path"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M3.5 6.5h6l2 2h9v10h-17z"/></svg>\\maru-fs01\Projects\2026\<b>DSNor_Akkasaeter</b></div>
+        <div class="fchips" id="fchips"></div>
+      </div>
+      <div class="card">
+        <div class="scan"><span><b>10 files found</b> · 6 used for this quote · last scan: today 14:32</span><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="m5 12 4.5 4.5L19 7"/></svg>All files mapped</span></div>
+        <table class="ft-t">
+          <thead><tr><th style="width:30%">File</th><th>Type</th><th>Relevance</th><th>What the AI extracted</th><th>Used in cost lines</th></tr></thead>
+          <tbody id="ftBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom action bar -->
+  <footer class="bbar">
+    <div class="cbox">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M4 5h16v11H9l-5 4z"/></svg>
+      <input id="globalComment" placeholder="Write a comment to the AI, e.g. 'Client confirmed galvanising instead of paint'">
+    </div>
+    <span class="spacer"></span>
+    <span class="hint" id="pendingHint">1 edit · 0 comments pending</span>
+    <button class="btn sec" id="exportBtn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M12 4v11M7 10l5 5 5-5M5 19h14"/></svg>Export PDF</button>
+    <button class="btn" id="sendBtn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M4 12h14M13 6l6 6-6 6"/></svg>Send back to AI</button>
+  </footer>
+</div>
+
+<!-- Drawer -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="dr-h">
+    <span class="ft" id="drFt">PDF</span>
+    <div><div class="fn" id="drName"></div><div class="fs" id="drSub"></div></div>
+    <button class="x" id="drClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="dr-b">
+    <div class="dr-sec"><div class="dr-meta" id="drMeta"></div></div>
+    <div class="dr-sec"><div class="k">Location in file</div><div class="loc"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.2"/></svg><span id="drLoc"></span></div></div>
+    <div class="dr-sec"><div class="k">Excerpt</div><div class="excerpt" id="drEx"></div></div>
+    <div class="dr-sec"><div class="k">What the AI extracted</div><ul class="bl" id="drList"></ul></div>
+  </div>
+  <div class="dr-f">
+    <button class="btn" id="openFile"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg>Open file</button>
+    <button class="btn sec" id="drClose2">Close</button>
+    <span class="conf-note" id="drConf"></span>
+  </div>
+</aside>
+
+<!-- Modal -->
+<div class="scrim" id="mScrim"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true">
+  <div class="box">
+    <div class="m-h">
+      <div class="eyebrow">Send back to AI</div>
+      <h2 id="mTitle">Re-running the analysis</h2>
+      <p id="mSub">Applying estimator edits and comments to Draft v2.</p>
+    </div>
+    <div class="m-cm" id="mCm" style="display:none"></div>
+    <ul class="steps" id="steps">
+      <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.6"><path d="m5 12 4.5 4.5L19 7"/></svg></span>Mapping files<span class="tm"></span></li>
+      <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.6"><path d="m5 12 4.5 4.5L19 7"/></svg></span>Re-analysing 6 relevant files<span class="tm"></span></li>
+      <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.6"><path d="m5 12 4.5 4.5L19 7"/></svg></span>Recalculating cost lines<span class="tm"></span></li>
+      <li class="final"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.6"><path d="m5 12 4.5 4.5L19 7"/></svg></span>Report v3 ready<span class="tm"></span></li>
+    </ul>
+    <div class="prog"><div id="prog"></div></div>
+    <div class="m-f"><button class="btn sec" id="mCancel">Cancel</button><button class="btn" id="mDone" style="display:none">View report v3</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const eur = n => '€' + fmt(n);
+const ICON = {
+  chev:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>',
+  cm:'<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><rect x="8" y="8" width="12" height="12"/><path d="M16 8V4H4v12h4"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="m5 12 4.5 4.5L19 7"/></svg>',
+  flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
+  excl:'<svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M8 12h8"/></svg>'
+};
+
+/* ---------- Sources (drawer content) ---------- */
+const RATE_FILE = {name:'Maru_rate_file_2026.xlsx', ft:'RULE', type:'Rule file · Excel maintained by Maru', rel:'Rate source'};
+const SRC = {
+  ifc1:{name:'Akkasaeter_phase1.ifc', ft:'IFC', type:'IFC model', rel:'High', used:'#1, #2, #3',
+    loc:'IFC element: 412 beams, category Beam · 96 columns, category Column',
+    ex:'IfcBeam #4127 · Material <mark>S355J2</mark> · Profile HEA 300 · Length 7 450 mm · Mass 654 kg',
+    list:['412 beams, 96 columns','61 t net steel','Part counts and surface areas']},
+  ifc2:{name:'Akkasaeter_phase2.ifc', ft:'IFC', type:'IFC model', rel:'High', used:'#1, #2',
+    loc:'IFC elements: all members, categories Beam / Column / Plate',
+    ex:'IfcBeam #8812 · Profile IPE 360 · S355J2 · <mark>no connection plates or bolts modelled</mark>',
+    list:['87 t net steel','Connections missing','12 members overlap with phase 1']},
+  ifc12:{name:'Akkasaeter_phase1.ifc + phase2.ifc', ft:'IFC', type:'IFC models', rel:'High', used:'#1, #2, #3',
+    loc:'IFC elements: 412 beams, 96 columns (phase 1) · 87 t (phase 2), categories Beam / Column / Plate',
+    ex:'Phase 1: <mark>61 t</mark> · Phase 2: <mark>87 t</mark> · 12 members (3.1 t) appear in both files',
+    list:['148 t net steel, S355','+ 7% offcuts = 158.4 t to buy','Possible duplicates flagged (see open issues)']},
+  ifcparts:{name:'Akkasaeter_phase1.ifc + phase2.ifc', ft:'IFC', type:'IFC models', rel:'High', used:'#2',
+    loc:'IFC elements: part counts per category (Beam, Column, Plate)',
+    ex:'Phase 1: <mark>412 beams, 96 columns</mark> · Phase 2: 87 t, connections not modelled',
+    list:['Cut, drill and weld operations per part','Input for Maru time norms','Phase 2 connections estimated (see open issues)']},
+  ifcsurf:{name:'Akkasaeter_phase1.ifc + phase2.ifc', ft:'IFC', type:'IFC models', rel:'High', used:'#3',
+    loc:'IFC element: computed outer surface area of all steel members',
+    ex:'Total paintable surface: <mark>3,300 m²</mark> (phase 1 and phase 2 combined)',
+    list:['3,300 m² surface area','Basis for C3M paint quantity']},
+  pdfmat:{name:'Material_list_phase1.pdf', ft:'PDF', type:'PDF', rel:'High', used:'#1',
+    loc:'Pages 2–5, table "Profiles"',
+    ex:'HEA 300 · S355J2 · 24 pcs · L = 7 450 mm · <mark>15.7 t</mark>',
+    list:['Profiles, lengths, weights','Cross-check against phase 1 IFC: match']},
+  spec12:{name:'Technical_specification_steel.pdf', ft:'PDF', type:'PDF, 86 pages', rel:'High', used:'#3',
+    loc:'Page 12, §4.3',
+    ex:'"All steel surfaces shall be protected with a <mark>C3M paint system, durability H</mark>… Final colour (RAL) to be confirmed."',
+    list:['EXC2','C3M paint, durability H','80% recycled steel required']},
+  specfire:{name:'Technical_specification_steel.pdf', ft:'PDF', type:'PDF, 86 pages', rel:'High', used:'#3',
+    loc:'Sections 4.1–4.6 searched · no fire protection class found',
+    ex:'"Requirements for passive fire protection: <mark>see architectural documentation</mark>."',
+    list:['No R30 / R60 class stated','Architectural drawings show building outline only']},
+  rfq:{name:'RFQ_form_DSNor.xlsx', ft:'XLSX', type:'Spreadsheet', rel:'High', used:'#5',
+    loc:'Sheet "Scope", rows 8–14',
+    ex:'Workshop drawings: <mark>included in supplier scope</mark> · Offer validity: 60 days · Currency: EUR',
+    list:['Scope','Deadline','Offer validity','Currency']},
+  eml:{name:'Email_DSNor_inquiry.eml', ft:'EML', type:'Email', rel:'Medium', used:'#7',
+    loc:'Email body, paragraph 2',
+    ex:'"Delivery DAP to site in <mark>Akkasæter, Norway</mark>. Please send your bid before 23 October."',
+    list:['Delivery address','Bid deadline']},
+  ruletime:{...RATE_FILE, used:'#2', loc:'Sheet "Time norms", rows 4–22',
+    ex:'Fillet weld a5: <mark>0.42 h/m</mark> · Drilling Ø22: 0.06 h/hole · Sawing HEA 300: 0.25 h/cut',
+    list:['Time norms per operation','Labour rate €46/h']},
+  rulerate:{...RATE_FILE, used:'#6, #8', loc:'Sheet "Rates"',
+    ex:'Packaging, standard: <mark>€30/t</mark> · Margin factor, competitive bid: <mark>1.05</mark>',
+    list:['Packaging €30/t','Margin factor 1.05']},
+  ruleassume:{...RATE_FILE, used:'#4', loc:'Sheet "Assumptions", row 6',
+    ex:'Fasteners not in model: <mark>estimate 1% of steel weight</mark> at €6.5/kg',
+    list:['Fasteners 1.5 t','Low confidence until connections are modelled']},
+  // project file entries
+  png:{name:'Scope_colours_screenshot.png', ft:'PNG', type:'Image', rel:'Medium', used:'—',
+    loc:'Full image, colour legend at bottom right',
+    ex:'Legend: <mark>Yellow = secondary steel (in scope)</mark> · Grey = by others',
+    list:['Yellow = secondary steel (in scope)']},
+  db1:{name:'Akkasaeter_model.db1', ft:'DB1', type:'Tekla database', rel:'Low', used:'—',
+    loc:'Binary Tekla database', ex:'Not parsed in this version. The same model is available as IFC.', list:['Not parsed in this version']},
+  arch:{name:'Architectural_drawings.pdf', ft:'PDF', type:'PDF, 40 pages', rel:'Low', used:'—',
+    loc:'Pages 1–6, plans and elevations', ex:'Building outline 48 × 24 m · <mark>no structural or fire data</mark>', list:['Building outline only']},
+  zip:{name:'Site_photos.zip', ft:'ZIP', type:'Archive', rel:'Not used', used:'—',
+    loc:'Archive, 34 images', ex:'Site photos are not used for pricing.', list:['—']}
+};
+
+/* ---------- Cost lines ---------- */
+const MARGIN_RATIO = 15260/317740;
+const LINES = [
+  {id:1,name:'Steel material',desc:'S355 profiles and plates, incl. 7% offcuts',qty:158.4,qu:'t',rate:820,rp:'€',rs:'/t',f:1,price:129900,conf:'high',src:[['ifc12','IFC · phase 1 + 2'],['pdfmat','PDF · Material list']]},
+  {id:2,name:'Fabrication labour',desc:'Cutting, drilling, assembly, welding',qty:2100,qu:'h',rate:46,rp:'€',rs:'/h',f:1,price:96600,conf:'medium',labour:true,src:[['ifcparts','IFC · part counts'],['ruletime','RULE · Time norms']]},
+  {id:3,name:'Surface treatment C3M',desc:'Paint system per spec, RAL to be confirmed',qty:3300,qu:'m²',rate:15.5,rp:'€',rs:'/m²',f:1,price:51150,conf:'medium',src:[['spec12','PDF · Spec p. 12'],['ifcsurf','IFC · surface areas']]},
+  {id:4,name:'Fasteners',desc:'Not in model, estimated at 1% of steel weight',qty:1.5,qu:'t',rate:6.5,rp:'€',rs:'/kg',f:1000,price:9750,conf:'low',src:[['ruleassume','RULE · Assumption']]},
+  {id:5,name:'Workshop drawings',desc:'Modelling and shop drawings',qty:148,qu:'t',rate:52,rp:'€',rs:'/t',f:1,price:7700,conf:'high',src:[['rfq','XLSX · RFQ form']]},
+  {id:6,name:'Packaging',desc:'Standard packing',qty:148,qu:'t',rate:30,rp:'€',rs:'/t',f:1,price:4440,conf:'high',src:[['rulerate','RULE · Maru rate file']]},
+  {id:7,name:'Transport to site',desc:'7 standard trucks, Estonia → Norway',qty:7,qu:'trucks',rate:2600,rp:'€',rs:'/truck',f:1,price:18200,conf:'medium',src:[['eml','EML · client email']],pre:{qty:'8 trucks'}},
+  {id:8,name:'Margin',desc:'1.05, competitive bid',margin:true,price:15260,src:[['rulerate','RULE · Maru rate file']]}
+];
+LINES.forEach(l => { l.orig = {qty:l.qty, rate:l.rate, price:l.price}; l.edited = {qty:!!(l.pre&&l.pre.qty), rate:false}; l.comment=''; });
+const LABOUR = [['Cutting and sawing',320,'#1F4A8E'],['Drilling',180,'#3A6FB5'],['Assembly',760,'#4DA3DB'],['Welding',690,'#8CC3E8'],['Handling',150,'#C3D6E8']];
+let labourOpen = true;
+const openComments = new Set();
+
+function recalc(){
+  const sub = LINES.filter(l=>!l.margin).reduce((s,l)=>s+l.price,0);
+  LINES.find(l=>l.margin).price = Math.round(sub*MARGIN_RATIO/10)*10;
+  return LINES.reduce((s,l)=>s+l.price,0);
+}
+const labourH = () => LINES[1].qty;
+
+function edCell(l,field){
+  const v = l[field];
+  const ed = l.edited[field] || v !== l.orig[field];
+  const pre = field==='rate' ? `<span class="u">${l.rp}</span>` : '';
+  const suf = field==='rate' ? `<span class="u">${l.rs}</span>` : `<span class="u">&nbsp;${l.qu}</span>`;
+  let mark = '';
+  if (ed) mark = (l.pre && l.pre[field] && v===l.orig[field]) ? `<span class="emark">edited · was ${l.pre[field]}</span>`
+                : `<span class="emark">edited · AI ${field==='rate'?l.rp+l.orig.rate+l.rs:fmt2(l.orig.qty)+' '+l.qu}</span>`;
+  return `<div class="ed ${ed?'edited':''}">${pre}<input data-id="${l.id}" data-f="${field}" value="${fmt2(v)}" style="width:${String(fmt2(v)).length+0.3}ch" aria-label="${field}">${suf}</div>${mark}`;
+}
+function fmt2(v){ return Number.isInteger(v) ? v.toLocaleString('en-US') : v.toLocaleString('en-US',{maximumFractionDigits:2}); }
+
+function renderTable(){
+  const total = recalc();
+  let h = '';
+  LINES.forEach(l=>{
+    const chips = l.src.map(([k,label])=>chip(k,label)).join('');
+    h += `<tr class="main-row">
+      <td class="idx num">${l.id}</td>
+      <td><div class="ln-name">${l.name}${l.labour?`<button class="exp-btn ${labourOpen?'open':''}" id="expBtn" title="Labour breakdown">${ICON.chev}</button>`:''}</div><div class="ln-desc" title="${l.desc}">${l.id===7 && l.qty!==7 ? fmt2(l.qty)+' standard trucks, Estonia → Norway' : l.desc}</div></td>
+      <td class="r num">${l.margin?'<span class="dash">—</span>':edCell(l,'qty')}</td>
+      <td class="r num">${l.margin?'<span class="dash">—</span>':edCell(l,'rate')}</td>
+      <td class="r num">${l.labour?fmt(l.qty):'<span class="dash">—</span>'}</td>
+      <td class="r num price" id="p${l.id}">${fmt(l.price)}</td>
+      <td>${l.conf?`<span class="conf ${l.conf}">${cap(l.conf)}</span>`:'<span class="dash">—</span>'}</td>
+      <td><div class="srcs">${chips}</div></td>
+      <td><button class="cm-btn ${l.comment?'has':''}" data-cm="${l.id}" title="Comment for the AI on this line">${ICON.cm}</button></td>
+    </tr>`;
+    if (l.labour && labourOpen){
+      const tot = LABOUR.reduce((s,x)=>s+x[1],0), k = labourH()/tot;
+      h += `<tr class="sub"><td colspan="9"><div class="lb">
+        <div class="t"><b>Labour breakdown</b>Time norms × part counts</div>
+        <div><div class="lb-bar">${LABOUR.map(x=>`<div style="flex:${x[1]};background:${x[2]}"></div>`).join('')}</div>
+        <div class="lb-items">${LABOUR.map(x=>`<div style="border-color:${x[2]}"><b class="num">${fmt(x[1]*k)} h</b>${x[0]}</div>`).join('')}</div></div>
+      </div></td></tr>`;
+    }
+    if (openComments.has(l.id)){
+      h += `<tr class="cmt"><td colspan="9"><div class="cmt-box">${ICON.cm}<input data-cmi="${l.id}" placeholder="Comment for the AI on this line" value="${esc(l.comment)}"><button class="btn sm" data-cms="${l.id}">Save</button></div></td></tr>`;
+    }
+  });
+  h += `<tr class="total"><td></td><td>Total</td><td></td><td></td><td class="r num">${fmt(labourH())}</td><td class="r num price">${fmt(total)}</td><td colspan="3"><span style="font-weight:500;color:var(--muted);font-size:13px">≈ €${(total/148000).toFixed(2)}/kg · range ${eur(Math.round(total*315/333/1000)*1000)} – ${eur(Math.round(total*352/333/1000)*1000)}</span></td></tr>`;
+  $('#ctBody').innerHTML = h;
+  updateSummary(total);
+}
+const cap = s => s[0].toUpperCase()+s.slice(1);
+const esc = s => s.replace(/"/g,'&quot;');
+function chip(k,label){ const s=SRC[k]; const t=label.split(' · ')[0]; return `<button class="chip" data-src="${k}"><span class="ft ${s.ft}">${t}</span>${label.split(' · ').slice(1).join(' · ')}</button>`; }
+
+function updateSummary(total){
+  $('#kTotal').textContent = eur(total);
+  $('#kRange').textContent = `${eur(Math.round(total*315/333/1000)*1000)} – ${eur(Math.round(total*352/333/1000)*1000)}`;
+  $('#kPerKg').textContent = `≈ €${(total/148000).toFixed(2)}/kg`;
+  $('#kLabour').innerHTML = `${fmt(labourH())}<small>h</small>`;
+  $('#kHpt').textContent = `${(labourH()/148).toFixed(1)} h/t`;
+  const p = id => LINES.find(l=>l.id===id).price;
+  const cats = [['Material',p(1),'#1F4A8E'],['Labour',p(2),'#3A6FB5'],['Surface treatment',p(3),'#4DA3DB'],['Transport',p(7),'#8CC3E8'],['Other',p(4)+p(5)+p(6),'#B9CFE3','Fasteners, drawings, packaging'],['Margin',p(8),'#D5DCE5']];
+  $('#stack').innerHTML = cats.map(c=>`<div style="flex:${c[1]};background:${c[2]}" title="${c[0]}"></div>`).join('');
+  $('#bdList').innerHTML = cats.map(c=>`<li><span class="sw" style="background:${c[2]}"></span><span>${c[0]}${c[3]?`<span style="color:var(--muted);font-size:12px"> · ${c[3]}</span>`:''}</span><span class="amt num">${eur(c[1])}</span><span class="pct num">${(c[1]/total*100).toFixed(1)}%</span></li>`).join('')
+    + `<li class="tot"><span></span><span>Total</span><span class="amt num">${eur(total)}</span><span class="pct num">100%</span></li>`;
+  const edits = LINES.filter(l=>!l.margin && (l.edited.qty||l.edited.rate||l.qty!==l.orig.qty||l.rate!==l.orig.rate)).length;
+  $('#editCount').textContent = `${edits} line${edits===1?'':'s'} edited by estimator`;
+  updatePending();
+}
+function updatePending(){
+  const edits = LINES.filter(l=>!l.margin && (l.edited.qty||l.edited.rate||l.qty!==l.orig.qty||l.rate!==l.orig.rate)).length;
+  const cms = LINES.filter(l=>l.comment).length + ($('#globalComment').value.trim()?1:0);
+  $('#pendingHint').textContent = `${edits} edit${edits===1?'':'s'} · ${cms} comment${cms===1?'':'s'} pending`;
+}
+
+$('#ctBody').addEventListener('change', e=>{
+  const i = e.target.closest('input[data-f]'); if(!i) return;
+  const l = LINES.find(x=>x.id==i.dataset.id), f = i.dataset.f;
+  const v = parseFloat(i.value.replace(/[^0-9.]/g,''));
+  if (isNaN(v)) { renderTable(); return; }
+  l[f] = v;
+  if (v !== l.orig[f]) { l.edited[f] = true; if (l.pre) delete l.pre[f]; }
+  l.price = (l.qty===l.orig.qty && l.rate===l.orig.rate) ? l.orig.price : Math.round(l.qty*l.rate*l.f/10)*10;
+  renderTable();
+  const pc = $('#p'+l.id); pc.classList.add('flash');
+  $('.ct tr.total .price').classList.add('flash');
+});
+$('#ctBody').addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.matches('input[data-f]')) e.target.blur(); });
+$('#ctBody').addEventListener('input', e=>{ if(e.target.matches('input[data-f]')) e.target.style.width = (Math.max(2,e.target.value.length)+0.3)+'ch'; });
+$('#ctBody').addEventListener('click', e=>{
+  if (e.target.closest('#expBtn')) { labourOpen=!labourOpen; renderTable(); return; }
+  const cb = e.target.closest('[data-cm]');
+  if (cb) { const id=+cb.dataset.cm; openComments.has(id)?openComments.delete(id):openComments.add(id); renderTable(); const inp=$(`[data-cmi="${id}"]`); if(inp) inp.focus(); return; }
+  const sv = e.target.closest('[data-cms]');
+  if (sv) { const id=+sv.dataset.cms; const l=LINES.find(x=>x.id===id); l.comment=$(`[data-cmi="${id}"]`).value.trim(); openComments.delete(id); renderTable(); toast(l.comment?`Comment saved on line #${id}`:'Comment removed'); }
+});
+$('#ctBody').addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.matches('[data-cmi]')) $(`[data-cms="${e.target.dataset.cmi}"]`).click(); });
+$('#resetBtn').addEventListener('click', ()=>{ LINES.forEach(l=>{ if(l.margin) return; l.qty=l.orig.qty; l.rate=l.orig.rate; l.price=l.orig.price; }); renderTable(); toast('Quantities and rates reset; estimator edit on line #7 kept'); });
+
+/* ---------- Issues ---------- */
+const ISSUES = [
+  {sev:'high',type:'Missing',t:'Fire protection class not stated in the specification',eff:['up','up to +€60,000','if R30 fire paint is required'],src:['specfire','PDF · Spec §4.6'],q:'Is fire protection (R30/R60) required for the main frame?'},
+  {sev:'medium',type:'Incomplete',t:'Connections missing in the phase 2 IFC model',eff:['up','±80 labour hours','≈ ±€3,700 at €46/h'],src:['ifc2','IFC · phase 2'],q:'Can you send the phase 2 model with connections?'},
+  {sev:'medium',type:'Unclear',t:'Possible duplicate beams across the phase 1 and phase 2 IFC files (12 items, 3.1 t)',eff:['down','−€7,000','if duplicates are confirmed'],src:['ifc12','IFC · phase 1 + 2'],q:'Do the 12 overlapping beams in phase 1 and phase 2 refer to the same members?'},
+  {sev:'low',type:'Missing',t:'RAL colour not specified',eff:['none','None expected','standard RAL assumed in rate'],src:['spec12','PDF · Spec p. 12'],q:'Which RAL colour should be used for the steel frame?'},
+  {sev:'low',type:'EU norm flag',flag:true,t:'No EN 15804 EPD available for the chosen paint system',eff:['none','No price effect','carbon figure less reliable'],src:['spec12','PDF · Spec p. 12'],action:'Request EPD from paint supplier'}
+];
+function renderIssues(){
+  $('#issList').innerHTML = ISSUES.map((x,i)=>`
+    <div class="card iss sev-${x.sev} ${x.state==='resolved'?'resolved':''}" data-i="${i}">
+      <div>
+        <div class="tags"><span class="tag sev-${x.sev}">${cap(x.sev)} impact</span><span class="tag ${x.flag?'flag':'type'}">${x.flag?ICON.flag:''}${x.type}</span>${x.state?`<span class="state-tag ${x.state==='exclusion'?'excl':''}">${x.state==='resolved'?'Resolved':'Exclusion added'}</span>`:''}<span class="tag-src">${chip(x.src[0],x.src[1])}</span></div>
+        <div class="ttl">${x.t}</div>
+      </div>
+      <div class="eff"><div class="k">Effect on price</div><div class="v ${x.eff[0]}">${x.eff[1]}</div><div class="d">${x.eff[2]}</div></div>
+      <div class="q"><div class="qh"><span class="k">${x.action?'Suggested action':'Question to client'}</span><button class="btn sec sm" data-copy="${i}">${x.action?ICON.check+'Create task':ICON.copy+'Copy question'}</button></div><span class="t">${x.action||x.q}</span></div>
+      <div class="acts">
+        <button class="btn sec sm" data-res="${i}">${ICON.check}${x.state==='resolved'?'Reopen':'Mark resolved'}</button>
+        <button class="btn ghost sm" data-exc="${i}">${ICON.excl}${x.state==='exclusion'?'Remove exclusion':'Add as exclusion'}</button>
+      </div>
+    </div>`).join('');
+  const open = ISSUES.filter(x=>x.state!=='resolved').length;
+  $('#issBadge').textContent = open; $('#issBadge').style.display = open?'':'none';
+  $('#kIssues').textContent = open;
+  $('#sumText').innerHTML = `<b>${open} open issue${open===1?'':'s'}</b> · potential price impact <span class="imp neg">−€7,000</span> / <span class="imp pos">+€60,000</span>`;
+}
+$('#issList').addEventListener('click', e=>{
+  const c=e.target.closest('[data-copy]');
+  if(c){ const x=ISSUES[+c.dataset.copy]; const txt=x.action||x.q; try{navigator.clipboard&&navigator.clipboard.writeText(txt)}catch(_){}
+    c.innerHTML = ICON.check+(x.action?'Task created':'Copied'); setTimeout(()=>renderIssues(),1600); return; }
+  const r=e.target.closest('[data-res]'); if(r){ const x=ISSUES[+r.dataset.res]; x.state = x.state==='resolved'?null:'resolved'; renderIssues(); return; }
+  const x=e.target.closest('[data-exc]'); if(x){ const it=ISSUES[+x.dataset.exc]; it.state = it.state==='exclusion'?null:'exclusion'; renderIssues(); if(it.state) toast('Added to the exclusions list of the offer'); }
+});
+
+/* ---------- Files ---------- */
+const FILES = [
+  ['RFQ_form_DSNor.xlsx','XLSX','Spreadsheet','High',['Scope','deadline','offer validity','currency'],'#5','rfq'],
+  ['Akkasaeter_phase1.ifc','IFC','IFC model','High',['412 beams','96 columns','61 t'],'#1, #2, #3','ifc1'],
+  ['Akkasaeter_phase2.ifc','IFC','IFC model','High',['87 t','connections missing'],'#1, #2','ifc2'],
+  ['Material_list_phase1.pdf','PDF','PDF','High',['Profiles','lengths','weights'],'#1','pdfmat'],
+  ['Technical_specification_steel.pdf','PDF','PDF, 86 pages','High',['EXC2','C3M paint','80% recycled steel required'],'#3','spec12'],
+  ['Email_DSNor_inquiry.eml','EML','Email','Medium',['Delivery address','bid deadline'],'#7','eml'],
+  ['Scope_colours_screenshot.png','PNG','Image','Medium',['Yellow = secondary steel (in scope)'],'—','png'],
+  ['Akkasaeter_model.db1','DB1','Tekla database','Low',['Not parsed in this version'],'—','db1'],
+  ['Architectural_drawings.pdf','PDF','PDF, 40 pages','Low',['Building outline only'],'—','arch'],
+  ['Site_photos.zip','ZIP','Archive','Not used',[],'—','zip']
+];
+const RELS = ['High','Medium','Low','Not used'];
+let fFilter = 'All';
+function renderFiles(){
+  $('#fchips').innerHTML = ['All',...RELS].map(r=>`<button class="fchip ${fFilter===r?'active':''}" data-ff="${r}">${r}<span>${r==='All'?FILES.length:FILES.filter(f=>f[3]===r).length}</span></button>`).join('');
+  let h='';
+  RELS.filter(r=>fFilter==='All'||fFilter===r).forEach(r=>{
+    const fs = FILES.filter(f=>f[3]===r); if(!fs.length) return;
+    h += `<tr class="grp"><td colspan="5">${r==='Not used'?'Not used':r+' relevance'} · ${fs.length} file${fs.length>1?'s':''}</td></tr>`;
+    fs.forEach(f=>{
+      h += `<tr class="frow ${r==='Low'||r==='Not used'?'dim':''}" data-src="${f[6]}">
+        <td><div class="fname"><span class="ft ${f[1]}">${f[1]}</span>${f[0]}</div></td>
+        <td class="ftype">${f[2]}</td>
+        <td><span class="rel ${r.split(' ')[0]}">${r}</span></td>
+        <td>${f[4].length?`<div class="bs">${f[4].map(x=>`<span>${x}</span>`).join('')}</div>`:'<span class="dash">—</span>'}</td>
+        <td class="used">${f[5]==='—'?'<span class="dash">—</span>':f[5]}</td></tr>`;
+    });
+  });
+  $('#ftBody').innerHTML = h;
+}
+$('#fchips').addEventListener('click', e=>{ const b=e.target.closest('[data-ff]'); if(b){ fFilter=b.dataset.ff; renderFiles(); }});
+
+/* ---------- Drawer ---------- */
+let activeChip=null;
+function openDrawer(k, el){
+  const s = SRC[k];
+  $('#drFt').className = 'ft '+s.ft; $('#drFt').textContent = s.ft;
+  $('#drName').textContent = s.name;
+  $('#drSub').textContent = s.type;
+  $('#drMeta').innerHTML = `<div>Type</div><div>${s.type}</div><div>Relevance</div><div><span class="rel ${s.rel.split(' ')[0]==='Rate'?'Medium':s.rel.split(' ')[0]}">${s.rel}</span></div><div>Used in</div><div class="used">${s.used}</div><div>Read</div><div>Today 14:32 · shared drive</div>`;
+  $('#drLoc').textContent = s.loc;
+  $('#drEx').innerHTML = s.ex;
+  $('#drList').innerHTML = s.list.map(x=>`<li>${x}</li>`).join('');
+  $('#drConf').textContent = s.ft==='RULE' ? 'Deterministic rule' : 'AI extraction · verified';
+  if(activeChip) activeChip.classList.remove('on');
+  if(el && el.classList.contains('chip')){ el.classList.add('on'); activeChip=el; }
+  $('#drawer').classList.add('on'); $('#scrim').classList.add('on'); $('#drawer').setAttribute('aria-hidden','false');
+}
+function closeDrawer(){ $('#drawer').classList.remove('on'); $('#scrim').classList.remove('on'); if(activeChip) activeChip.classList.remove('on'); activeChip=null; }
+document.addEventListener('click', e=>{
+  const c = e.target.closest('[data-src]'); if(c && !e.target.closest('.drawer')) { openDrawer(c.dataset.src, c); return; }
+  const g = e.target.closest('[data-goto]'); if(g) go(g.dataset.goto);
+});
+$('#scrim').addEventListener('click', closeDrawer);
+$('#drClose').addEventListener('click', closeDrawer);
+$('#drClose2').addEventListener('click', closeDrawer);
+$('#openFile').addEventListener('click', ()=>toast('Opening files is not available in this mockup'));
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeDrawer(); } });
+
+/* ---------- Navigation ---------- */
+function go(p){
+  $$('#nav a').forEach(a=>a.classList.toggle('active',a.dataset.page===p));
+  $$('.page').forEach(s=>s.classList.toggle('active',s.id==='page-'+p));
+  $('#main').scrollTop=0; closeDrawer();
+  try{ history.replaceState(null,'','#'+p); }catch(_){}
+}
+$('#nav').addEventListener('click', e=>{ const a=e.target.closest('a'); if(a) go(a.dataset.page); });
+
+/* ---------- Bottom bar / modal ---------- */
+let ver = 2;
+function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('on'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('on'),2200); }
+$('#exportBtn').addEventListener('click', ()=>toast(`Draft v${ver} exported as PDF (mock)`));
+$('#globalComment').addEventListener('input', updatePending);
+let timers=[];
+$('#sendBtn').addEventListener('click', ()=>{
+  const cm = $('#globalComment').value.trim();
+  const edits = LINES.filter(l=>!l.margin && (l.edited.qty||l.edited.rate||l.qty!==l.orig.qty||l.rate!==l.orig.rate)).length;
+  const lcm = LINES.filter(l=>l.comment).length;
+  $('#mTitle').textContent='Re-running the analysis';
+  $('#mSub').textContent = `Applying ${edits} estimator edit${edits===1?'':'s'}${(cm||lcm)?` and ${(cm?1:0)+lcm} comment${((cm?1:0)+lcm)===1?'':'s'}`:''} to Draft v${ver}.`;
+  $('#mCm').style.display = cm?'':'none'; $('#mCm').textContent = cm?`“${cm}”`:'';
+  const steps=$$('#steps li'); steps.forEach(s=>{s.className=s.classList.contains('final')?'final':''; s.querySelector('.tm').textContent='';});
+  $('#steps li:last-child').innerHTML = $('#steps li:last-child').innerHTML.replace(/Report v\d+ ready/,`Report v${ver+1} ready`);
+  $('#mDone').textContent=`View report v${ver+1}`;
+  $('#mDone').style.display='none'; $('#mCancel').style.display=''; $('#prog').style.width='0';
+  $('#modal').classList.add('on'); $('#mScrim').classList.add('on');
+  const durs=[900,1500,1100,500], times=['0.9 s','1.5 s','1.1 s',''];
+  let t=0; timers.forEach(clearTimeout); timers=[];
+  steps.forEach((s,i)=>{
+    timers.push(setTimeout(()=>{ s.classList.add('run'); },t));
+    t+=durs[i];
+    timers.push(setTimeout(()=>{ s.classList.remove('run'); s.classList.add('done'); s.querySelector('.tm').textContent=times[i]; $('#prog').style.width=((i+1)/steps.length*100)+'%';
+      if(i===steps.length-1){ finish(); } },t));
+  });
+});
+function finish(){
+  ver++;
+  $('#verText').textContent=`Draft v${ver} · re-analysed by AI`; $('#verChip').classList.add('fresh');
+  $('#lastRun').textContent='Today 14:36 · 6 files';
+  $('#mTitle').textContent=`Report v${ver} ready`;
+  $('#mSub').textContent='All cost lines recalculated. Your edits are kept and marked in the report.';
+  $('#mDone').style.display=''; $('#mCancel').style.display='none';
+  $('#globalComment').value=''; updatePending();
+}
+function closeModal(){ timers.forEach(clearTimeout); $('#modal').classList.remove('on'); $('#mScrim').classList.remove('on'); }
+$('#mDone').addEventListener('click', closeModal);
+$('#mCancel').addEventListener('click', closeModal);
+
+/* ---------- Init ---------- */
+renderTable(); renderIssues(); renderFiles();
+const h = location.hash.slice(1); if(['overview','costs','issues','files'].includes(h)) go(h);
+</script>
+</body>
+</html>
