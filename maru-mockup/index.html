@@ -24,13 +24,13 @@ button{font-family:inherit;cursor:pointer}
 .num{font-family:var(--num);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"lnum" 1}
 
 /* App grid */
-.app{position:relative;z-index:1;height:100vh;display:grid;grid-template-columns:208px 1fr;grid-template-rows:64px 20px 1fr 76px}
+.app{position:relative;z-index:1;height:100vh;display:grid;grid-template-columns:208px 1fr;grid-template-rows:64px 20px 1fr 84px}
 
 /* Header */
 .header{grid-column:1/-1;display:grid;grid-template-columns:1fr auto;align-items:center;background:#fff;border-bottom:1px solid var(--border);padding-right:28px}
-.brand{display:flex;align-items:baseline;gap:12px;padding-left:24px}
-.wordmark{font-weight:700;letter-spacing:.32em;color:var(--navy);font-size:20px}
-.brand-sub{color:var(--sky);font-size:13px;font-weight:500;letter-spacing:.02em;white-space:nowrap}
+.brand{display:flex;align-items:baseline;gap:8px;padding-left:22px;font-size:20px;letter-spacing:.01em;white-space:nowrap}
+.wordmark{font-weight:700;color:var(--navy)}
+.brand-sub{color:var(--sky);font-weight:700}
 .proj{display:flex;align-items:center;gap:14px;justify-content:center;min-width:0}
 .proj-name{font-size:15px;font-weight:500;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chip-ver{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--text);border:1px solid var(--border);background:#F8FAFC;border-radius:3px;padding:4px 10px;white-space:nowrap;transition:background .4s,border-color .4s}
@@ -64,7 +64,9 @@ button{font-family:inherit;cursor:pointer}
 .nav .badge{margin-left:auto;background:var(--lo);color:#fff;font-size:11px;font-weight:600;min-width:20px;height:20px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
 .side-foot{margin-top:auto;padding:0 22px;font-size:12px;color:var(--muted)}
 .side-foot .row{padding:10px 0;border-top:1px solid var(--line)}
-.side-export{width:100%;justify-content:center;margin-bottom:16px}
+.side-export{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 44px);margin:12px 22px 0;padding:10px 14px;background:#E3E8EF;border:1px solid #CDD5DF;border-radius:3px;color:var(--navy);font-size:14px;font-weight:500}
+.side-export:hover{background:#D7DEE7}
+.side-export svg{width:16px;height:16px;stroke:currentColor}
 .side-foot .k{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
 .side-foot .v{color:var(--text);font-size:12.5px;word-break:break-word}
 
@@ -143,9 +145,9 @@ h1{font-size:40px;font-weight:400;color:var(--navy);margin:0;line-height:1.1;let
 .lg-edit{display:inline-block;width:12px;height:12px;background:var(--edit);border:1px solid var(--edit-b);border-radius:2px;vertical-align:-2px;margin-right:6px}
 .tbl-wrap{overflow-x:auto}
 table.ct{width:100%;border-collapse:collapse;min-width:1040px;table-layout:fixed}
-.ct th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:left;padding:12px 12px;border-bottom:1px solid var(--border);background:#FAFBFC;white-space:nowrap}
+.ct th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:left;padding:12px 14px;border-bottom:1px solid var(--border);background:#FAFBFC;white-space:nowrap}
 .ct th.r,.ct td.r{text-align:right}
-.ct td{padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:14px}
+.ct td{padding:14px 14px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:14px}
 .ct tr.main-row:hover td{background:#FBFCFD}
 .ct td.idx{color:var(--muted);padding-left:20px}
 .ct th:first-child{padding-left:20px}
@@ -226,7 +228,7 @@ tr.total td.price{font-size:17px}
 .sumbar .counts{margin-left:auto;display:flex;gap:16px;font-size:13px;color:var(--muted)}
 .sumbar .counts span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:currentColor;vertical-align:0}
 .iss-list{display:flex;flex-direction:column;gap:8px}
-.iss{display:grid;grid-template-columns:minmax(0,1fr) 240px 170px;gap:32px;align-items:center;padding:10px 24px 10px 22px;border-left:3px solid var(--border);transition:opacity .3s}
+.iss{display:grid;grid-template-columns:minmax(0,1fr) 240px 170px;gap:32px;align-items:center;padding:9px 24px 9px 22px;border-left:3px solid var(--border);transition:opacity .3s}
 .iss.sev-high{border-left-color:var(--lo)}
 .iss.sev-medium{border-left-color:var(--md)}
 .iss.sev-low{border-left-color:#9AA6B6}
@@ -288,21 +290,21 @@ table.ft-t{width:100%;border-collapse:collapse}
 .rel.Low{background:#EEF1F5;color:#56657A}
 .rel.Not{background:#fff;color:#8A96A7;border:1px dashed #C4CDD8}
 .bs{display:flex;flex-wrap:wrap;gap:4px 0;font-size:13.5px}
-.bs span+span::before{content:"||";color:var(--sky);font-weight:600;margin:0 14px;letter-spacing:-.5px}
+.bs span+span::before{content:"||";color:var(--sky);font-weight:600;margin:0 8px;letter-spacing:-.5px}
 .bl li::before{content:"\\";color:var(--sky);font-weight:600;margin-right:6px}
 .used{font-family:var(--num);font-weight:600;color:var(--navy);white-space:nowrap}
 .frow.dim .fname,.frow.dim .bs{color:var(--muted)}
 
 /* Bottom bar */
 .bbar{grid-column:1/-1;background:#fff;border-top:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 28px;z-index:5}
-.cbox{flex:1;display:flex;align-items:center;gap:12px;border:1.5px solid var(--sky);border-radius:3px;padding:0 16px;height:48px;background:#E6F1FA}
+.cbox{flex:1;display:flex;align-items:center;gap:12px;border:1.5px solid var(--sky);border-radius:12px;padding:0 18px;height:56px;background:#E6F1FA}
 .cbox:focus-within{border-color:var(--navy);background:#fff;box-shadow:0 0 0 3px rgba(77,163,219,.2)}
 .cbox svg{width:20px;height:20px;stroke:var(--navy);flex:none}
 .cbox input{flex:1;border:0;background:transparent;font:inherit;font-size:14.5px;color:var(--text);outline:none;min-width:0}
 .cbox input::placeholder{color:#4F6788}
 .bbar .spacer{flex:1}
 .bbar .hint{font-size:12px;color:var(--muted);white-space:nowrap}
-.bbar .btn{height:48px;padding-left:22px;padding-right:22px}
+.bbar .btn{height:56px;border-radius:12px;padding-left:22px;padding-right:22px}
 
 /* Drawer */
 .scrim{position:fixed;inset:0;background:rgba(20,36,62,.28);opacity:0;pointer-events:none;transition:opacity .25s;z-index:20}
@@ -365,7 +367,7 @@ table.ft-t{width:100%;border-collapse:collapse}
 @media (max-width:1360px){
   .app{grid-template-columns:208px 1fr}
   .header{grid-template-columns:1fr auto}
-  .brand{padding-left:24px}
+  .brand{padding-left:22px}
   .nav a{padding:11px 22px}
   .nav-lbl,.side-foot{padding-left:22px;padding-right:22px}
   .main{padding:24px 28px 28px}
@@ -380,7 +382,7 @@ table.ft-t{width:100%;border-collapse:collapse}
 
   <!-- Header -->
   <header class="header">
-    <div class="brand"><span class="wordmark">MARU</span><span class="brand-sub">Quote Assistant</span></div>
+    <div class="brand"><span class="wordmark">Maru</span><span class="brand-sub">Quote Assistant</span></div>
     <div class="hdr-right">
       <div class="lang">ET<span>|</span><b>EN</b></div>
     </div>
@@ -395,10 +397,9 @@ table.ft-t{width:100%;border-collapse:collapse}
       <a data-page="costs"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Cost lines</a>
       <a data-page="issues"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M12 3.5 21 19.5H3z"/><path d="M12 10v4.5M12 16.8v.2"/></svg>Open issues<span class="badge" id="issBadge">5</span></a>
       <a data-page="files"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M3.5 6.5h6l2 2h9v10h-17z"/></svg>Project files</a>
+      <button class="side-export" id="exportBtn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M12 4v11M7 10l5 5 5-5M5 19h14"/></svg>Export PDF</button>
     </nav>
     <div class="side-foot">
-      <button class="btn sec side-export" id="exportBtn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M12 4v11M7 10l5 5 5-5M5 19h14"/></svg>Export PDF</button>
-      <div class="row"><span class="k">Report version</span><span class="v" id="verText">Draft v2</span></div>
       <div class="row"><span class="k">Last AI run</span><span class="v" id="lastRun">Today 14:32 · 6 files</span></div>
       <div class="row"><span class="k">Bid deadline</span><span class="v">23 Oct 2026 · 14 days left</span></div>
     </div>
@@ -411,15 +412,13 @@ table.ft-t{width:100%;border-collapse:collapse}
     <section class="page active" id="page-overview">
       <div class="phead">
         <div><div class="eyebrow">Quote report</div><h1>Overview</h1></div>
-        <div class="pmeta">Generated by AI <b>today 14:32</b> · reviewed by estimator<br>Prices from <b>Maru_rate_file_2026.xlsx</b></div>
       </div>
 
       <div class="kpis">
         <div class="card kpi primary">
-          <div class="lbl">Total price</div>
-          <span class="perkg num" id="kPerKg">≈ €2.25/kg</span>
+          <div class="lbl">Total price range</div>
           <div class="big num range" id="kTotal">€315,000 – €352,000</div>
-          <div class="meta">Estimated range</div>
+          <div class="meta num" id="kPerKg" style="font-size:14px">≈ €2.25/kg</div>
         </div>
         <div class="card kpi">
           <div class="lbl">Labour</div>
@@ -481,7 +480,7 @@ table.ft-t{width:100%;border-collapse:collapse}
       </div>
       <div class="card tbl-wrap">
         <table class="ct">
-          <colgroup><col style="width:44px"><col style="width:26.5%"><col style="width:9.5%"><col style="width:11%"><col style="width:7.5%"><col style="width:10%"><col style="width:11%"><col style="width:24.5%"><col style="width:44px"></colgroup>
+          <colgroup><col style="width:48px"><col style="width:17%"><col style="width:11%"><col style="width:12.5%"><col style="width:9%"><col style="width:11.5%"><col style="width:11.5%"><col style="width:27.5%"><col style="width:48px"></colgroup>
           <thead><tr>
             <th>#</th><th>Cost line</th><th class="r">Quantity</th><th class="r">Unit rate</th><th class="r">Labour&nbsp;h</th><th class="r" style="white-space:normal;line-height:1.3">Estimated<br>price (€)</th><th>Confidence</th><th>Source</th><th></th>
           </tr></thead>
@@ -669,7 +668,6 @@ const LINES = [
 ];
 LINES.forEach(l => { l.orig = {qty:l.qty, rate:l.rate, price:l.price}; l.comment=''; });
 const LABOUR = [['Cutting and sawing',320,'#1F4A8E'],['Drilling',180,'#3A6FB5'],['Assembly',760,'#4DA3DB'],['Welding',690,'#8CC3E8'],['Handling',150,'#C3D6E8']];
-let labourOpen = true;
 const openComments = new Set();
 
 function recalc(){
@@ -694,7 +692,7 @@ function renderTable(){
     const chips = l.src.map(([k,label])=>chip(k,label)).join('');
     h += `<tr class="main-row">
       <td class="idx num">${l.id}</td>
-      <td><div class="ln-name">${l.name}${l.labour?`<button class="exp-btn ${labourOpen?'open':''}" id="expBtn" title="Labour breakdown">${ICON.chev}</button>`:''}</div><div class="ln-desc" title="${l.desc}">${l.id===7 && l.qty!==7 ? fmt2(l.qty)+' standard trucks, Estonia → Norway' : l.desc}</div></td>
+      <td><div class="ln-name">${l.name}</div></td>
       <td class="r num">${l.margin?'<span class="dash">—</span>':edCell(l,'qty')}</td>
       <td class="r num">${l.margin?'<span class="dash">—</span>':edCell(l,'rate')}</td>
       <td class="r num">${l.labour?fmt(l.qty):'<span class="dash">—</span>'}</td>
@@ -703,14 +701,6 @@ function renderTable(){
       <td><div class="srcs">${chips}</div></td>
       <td><button class="cm-btn ${l.comment?'has':''}" data-cm="${l.id}" title="Comment for the AI on this line">${ICON.cm}</button></td>
     </tr>`;
-    if (l.labour && labourOpen){
-      const tot = LABOUR.reduce((s,x)=>s+x[1],0), k = labourH()/tot;
-      h += `<tr class="sub"><td colspan="9"><div class="lb">
-        <div class="t"><b>Labour breakdown</b>Time norms × part counts</div>
-        <div><div class="lb-bar">${LABOUR.map(x=>`<div style="flex:${x[1]};background:${x[2]}"></div>`).join('')}</div>
-        <div class="lb-items">${LABOUR.map(x=>`<div style="border-color:${x[2]}"><b class="num">${fmt(x[1]*k)} h</b>${x[0]}</div>`).join('')}</div></div>
-      </div></td></tr>`;
-    }
     if (openComments.has(l.id)){
       h += `<tr class="cmt"><td colspan="9"><div class="cmt-box">${ICON.cm}<input data-cmi="${l.id}" placeholder="Comment for the AI on this line" value="${esc(l.comment)}"><button class="btn sm" data-cms="${l.id}">Save</button></div></td></tr>`;
     }
@@ -747,7 +737,6 @@ $('#ctBody').addEventListener('change', e=>{
 $('#ctBody').addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.matches('input[data-f]')) e.target.blur(); });
 $('#ctBody').addEventListener('input', e=>{ if(e.target.matches('input[data-f]')) e.target.style.width = (Math.max(2,e.target.value.length)+0.3)+'ch'; });
 $('#ctBody').addEventListener('click', e=>{
-  if (e.target.closest('#expBtn')) { labourOpen=!labourOpen; renderTable(); return; }
   const cb = e.target.closest('[data-cm]');
   if (cb) { const id=+cb.dataset.cm; openComments.has(id)?openComments.delete(id):openComments.add(id); renderTable(); const inp=$(`[data-cmi="${id}"]`); if(inp) inp.focus(); return; }
   const sv = e.target.closest('[data-cms]');
@@ -811,7 +800,7 @@ function renderFiles(){
         <td><div class="fname"><span class="ft ${f[1]}">${f[1]}</span>${f[0]}</div></td>
         <td class="ftype">${f[2]}</td>
         <td><span class="rel ${r.split(' ')[0]}">${r}</span></td>
-        <td>${f[4].length?`<div class="bs">${f[4].map(x=>`<span>${x}</span>`).join('')}</div>`:'<span class="dash">—</span>'}</td></tr>`;
+        <td>${f[4].length?`<div class="bs">${f[4].map(x=>`<span>${x[0].toUpperCase()+x.slice(1)}</span>`).join('')}</div>`:'<span class="dash">—</span>'}</td></tr>`;
     });
   });
   $('#ftBody').innerHTML = h;
@@ -883,7 +872,6 @@ $('#sendBtn').addEventListener('click', ()=>{
 });
 function finish(){
   ver++;
-  $('#verText').textContent=`Draft v${ver}`;
   $('#lastRun').textContent='Today 14:36 · 6 files';
   $('#mTitle').textContent=`Report v${ver} ready`;
   $('#mSub').textContent='All cost lines recalculated. Your edits are kept in the report.';
